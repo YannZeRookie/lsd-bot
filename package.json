@@ -1,0 +1,18 @@
+{
+  "name": "lsd-bot",
+  "version": "0.1.0",
+  "description": "Le Bot des Scorpions du Désert",
+  "main": "index.js",
+  "dependencies": {
+    "botkit-discord": "github:brh55/botkit-discord#master",
+    "crypto": "^1.0.1",
+    "mysql": "^2.16.0",
+    "util": "^0.11.1"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "YannZeRookie",
+  "license": "MIT"
+}

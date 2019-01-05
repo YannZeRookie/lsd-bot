@@ -1,0 +1,9 @@
+/node_modules
+auth.json
+config.json
+db.json
+.DS_Store
+notes.md
+.idea/
+.vscode
+
