@@ -1,0 +1,7 @@
+{
+    "host": "Database Host",
+    "port": 3306,
+    "user": "Database User",
+    "password": "Database Password",
+    "database": "Database Name"
+ }
