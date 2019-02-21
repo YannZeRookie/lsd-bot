@@ -10,40 +10,24 @@ var discordConfig = require('./auth.json');
 var discordBot = BotkitDiscord(discordConfig);
 
 // MySQL
-var mysql      = require('mysql');
+var mysql = require('mysql');
 var mysqlConfig = require('./db.json');
 var db = mysql.createConnection(mysqlConfig);
+
+// MySQL connexion
 db.connect(function(err) {
     if (err) throw err;
 });
 
-function buildConnectionKey(user)
-{
-    key = crypto.randomBytes(20).toString('hex');
-    //-- Insert the key in the database for later retrieval from the website
-    //   including its username, discriminator and avatar
-    db.query("INSERT INTO lsd_login SET login_key=?, created_on=unix_timestamp(), discord_id=?, discord_username=?, discord_discriminator=?, discord_avatar=?", 
-            [key, user.id, user.username, user.discriminator, user.avatar], 
-            function(err, results, fields) {
-        if (err) throw err;
-        console.log('Created key=' + key + ' for user_id=' + user.id);
-    });
-    //-- Done
-    return key;
-}
-
-function buidLoginUrl(key)
-{
-    return config.connection_url + '/' + key;
-}
-
-db.query("SELECT * FROM lsd_section ORDER BY archived,`order`", function(err, results, fields) {
+// MySQL checkup
+/*db.query("SELECT * FROM lsd_section ORDER BY archived,`order`", function(err, results, fields) {
     if (err) throw err;
     results.forEach(row => {
         console.log('tag=' + row.tag + ' name=' + row.name);
     });
-});
+});*/
 
+// Discord events
 discordBot.hears('!connexion','ambient',(bot, message) => {
     var key = buildConnectionKey(message.author);
     bot.send({
@@ -53,7 +37,6 @@ discordBot.hears('!connexion','ambient',(bot, message) => {
     bot.reply(message, 'Je vous ai transmis un lien de connexion par message privé dans Discord');
     console.log('Connection request from ' + message.author.username + ' (' + message.author.id + ')');
 });
- 
 
 discordBot.hears('hello','ambient',(bot, message) => {
 	//console.log(util.inspect(bot));
@@ -101,3 +84,23 @@ discordBot.on('disconnect', (bot, event) => {
     db.end()
     bot.log('Good-bye!');
 });
+
+function buildConnectionKey(user)
+{
+    key = crypto.randomBytes(20).toString('hex');
+    //-- Insert the key in the database for later retrieval from the website
+    //   including its username, discriminator and avatar
+    db.query("INSERT INTO lsd_login SET login_key=?, created_on=unix_timestamp(), discord_id=?, discord_username=?, discord_discriminator=?, discord_avatar=?", 
+            [key, user.id, user.username, user.discriminator, user.avatar], 
+            function(err, results, fields) {
+        if (err) throw err;
+        console.log('Created key=' + key + ' for user_id=' + user.id);
+    });
+    //-- Done
+    return key;
+}
+
+function buidLoginUrl(key)
+{
+    return config.connection_url + '/' + key;
+}
