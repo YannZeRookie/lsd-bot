@@ -14,7 +14,10 @@ var mysql      = require('mysql');
 var mysqlConfig = require('./db.json');
 var db = mysql.createConnection(mysqlConfig);
 db.connect(function(err) {
-    if (err) throw err;
+    if (err) {
+        console.log('Could not connect to database');
+        throw err;
+    }
 });
 
 function buildConnectionKey(user)
@@ -92,6 +95,27 @@ discordBot.hears('.*', 'mention', (bot, message) => {
     console.log('Was mentioned by ' + message.author.username);
     console.log("\n");
 });
+
+discordBot.hears('!lance .+', 'ambient', (bot, message) => {
+    //console.log(util.inspect(bot));
+    //console.log(util.inspect(message));
+    var r = message.message.match(/lance\s+(\d+)/);
+    if (r && r[1] && r[1]>1) {
+        if (r[1]<=100000000) {
+            var result = 1 + Math.floor(Math.random() * Math.floor(r[1]));
+            bot.reply(message, 'OK, je lance un dé à ' + r[1] + ' faces ! Résultat : ' + result);
+            console.log(message.author.username + ' threw a dice! faces=' + r[1] + ' result=' + result);
+        }
+        else {
+            bot.reply(message, "Désolé, je suis limité à 100000000");
+        }
+    } else if (message.message.match(/lance\s+.*Totor0/i)) {
+        bot.reply(message, "Désolé, je ne pratique pas le lancer de nains !");
+    } else {
+        bot.reply(message, "Désolé, je n'ai pas compris. Il me faut un nombre ≥ 2 après la commande");
+    }
+});
+
 
 discordBot.on('ready', (bot, event) => {
     bot.log('Ready!');
