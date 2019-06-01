@@ -36,3 +36,11 @@ Lancement
     $ ./start.sh
 
 Le robot devrait apparaître connecté. Tapez `!connexion` dans Discord pour tester.
+
+Production
+----------
+
+Le server est lancé via [nodemon](https://github.com/remy/nodemon). Cela permet un redémarrage automatique dès qu'il détecte qu'un fichier JS a changé. La sortie est envoyée dans `/var/log/syslog`.
+
+    $ ./server.sh
+
