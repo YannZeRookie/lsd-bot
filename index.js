@@ -22,80 +22,73 @@ db.connect(function(err) {
     }
 });
 
-// MySQL checkup
-/*db.query("SELECT * FROM lsd_section ORDER BY archived,`order`", function(err, results, fields) {
-    if (err) throw err;
-    results.forEach(row => {
-        console.log('tag=' + row.tag + ' name=' + row.name);
-    });
-});*/
-
 // Discord events
-discordBot.hears('!connexion','ambient',(bot, message) => {
-    var key = buildConnectionKey(message.author);
-    bot.send({
-        text: "Voici votre lien de connexion : " + buidLoginUrl(key),
-    	to: message.author.id
-    });
-    bot.reply(message, 'Je vous ai transmis un lien de connexion par message privé dans Discord');
-    console.log('Connection request from ' + message.author.username + ' (' + message.author.id + ')');
+discordBot.hears('!connexion','ambient',(bot, msg) => {
+	//console.log(util.inspect(bot));
+	//console.log(util.inspect(msg));
+    var key = buildConnectionKey(msg.message.author);
+    msg.message.author.send("Voici votre lien de connexion : " + buidLoginUrl(key));
+    bot.reply(msg, 'Je vous ai transmis un lien de connexion par message privé dans Discord');
+    console.log('Connection request from ' + msg.message.author.username + ' (' + msg.message.author.id + ')');
 });
 
-discordBot.hears('hello','ambient',(bot, message) => {
+discordBot.hears('hello','ambient',(bot, msg) => {
 	//console.log(util.inspect(bot));
-	//console.log(util.inspect(message));
-    bot.reply(message, 'Received a `h e l l o` ambient from ' + message.author.username);
-    console.log('Replied to hello from ' + message.author.username+ ' msg: ' + message.text);
-    console.log("\n");
+	//console.log(util.inspect(msg));
+    bot.reply(msg, 'Received a `h e l l o` ambient from ' + msg.message.author.username);
+    //console.log('Replied to hello from ' + msg.message.author.username+ ' msg: ' + msg.message.content);
+    //console.log("\n");
 });
  
-discordBot.hears('.*', 'direct_message', (bot, message) => {
+discordBot.hears('.*', 'direct_message', (bot, msg) => {
 	//console.log(util.inspect(bot));
-	//console.log(util.inspect(message));
-    bot.reply(message, 'Received a direct_message from ' + message.author.username);
-    console.log('Received a direct_message by ' + message.author.username);
-    console.log("\n");
+    //console.log(util.inspect(message));
+    if (msg.message.author.id != "383969620463190017") { // Don't answer to ourselves
+        bot.reply(msg.message, 'Received a direct_message from ' + msg.message.author.username);
+        //console.log('Received a direct_message from ' + msg.message.author.username);
+        //console.log("\n");    
+    }
 });
 
-discordBot.hears('.*', 'direct_mention', (bot, message) => {
+discordBot.hears('.*', 'direct_mention', (bot, msg) => {
 	//console.log(util.inspect(bot));
-	//console.log(util.inspect(message));
-    bot.reply(message, 'Received a direct_mention from ' + message.author.username);
+	//console.log(util.inspect(msg));
+    bot.reply(msg.message, 'Received a direct_mention from ' + msg.message.author.username);
     /*
     bot.send({
     	text: "You're talking to me?",
-    	to: message.author.id
+    	to: msg.message.author.id
     });
     */
-    console.log('Was direct_mention by ' + message.author.username);
-    console.log("\n");
+    //console.log('Was direct_mention by ' + msg.message.author.username);
+    //console.log("\n");
 });
 
-discordBot.hears('.*', 'mention', (bot, message) => {
+discordBot.hears('.*', 'mention', (bot, msg) => {
 	//console.log(util.inspect(bot));
-	//console.log(util.inspect(message));
-    bot.reply(message, 'Received a mention from ' + message.author.username);
-    console.log('Was mentioned by ' + message.author.username);
-    console.log("\n");
+	//console.log(util.inspect(msg));
+    bot.reply(msg.message, 'Received a mention from ' + msg.message.author.username);
+    //console.log('Was mentioned by ' + msg.message.author.username);
+    //console.log("\n");
 });
 
-discordBot.hears('!lance .+', 'ambient', (bot, message) => {
+discordBot.hears('!lance .+', 'ambient', (bot, msg) => {
     //console.log(util.inspect(bot));
-    //console.log(util.inspect(message));
-    var r = message.message.match(/lance\s+(\d+)/);
+    //console.log(util.inspect(msg));
+    var r = msg.message.content.match(/lance\s+(\d+)/);
     if (r && r[1] && r[1]>1) {
         if (r[1]<=100000000) {
             var result = 1 + Math.floor(Math.random() * Math.floor(r[1]));
-            bot.reply(message, 'OK, je lance un dé à ' + r[1] + ' faces ! Résultat : ' + result);
-            console.log(message.author.username + ' threw a dice! faces=' + r[1] + ' result=' + result);
+            bot.reply(msg.message, 'OK, je lance un dé à ' + r[1] + ' faces ! Résultat : ' + result);
+            //console.log(msg.message.author.username + ' threw a dice! faces=' + r[1] + ' result=' + result);
         }
         else {
-            bot.reply(message, "Désolé, je suis limité à 100000000");
+            bot.reply(msg.message, "Désolé, je suis limité à 100000000");
         }
-    } else if (message.message.match(/lance\s+.*Totor0/i)) {
-        bot.reply(message, "Désolé, je ne pratique pas le lancer de nains !");
+    } else if (msg.message.content.match(/lance\s+.*Totor0/i)) {
+        bot.reply(msg.message, "Désolé, je ne pratique pas le lancer de nains !");
     } else {
-        bot.reply(message, "Désolé, je n'ai pas compris. Il me faut un nombre ≥ 2 après la commande");
+        bot.reply(msg.message, "Désolé, je n'ai pas compris. Il me faut un nombre ≥ 2 après la commande");
     }
 });
 
