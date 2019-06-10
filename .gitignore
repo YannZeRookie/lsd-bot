@@ -6,4 +6,5 @@ db.json
 notes.md
 .idea/
 .vscode
-
+restart.ts
+ecosystem.config.js
