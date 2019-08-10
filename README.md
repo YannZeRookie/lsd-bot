@@ -17,6 +17,9 @@ Database
 
 Il faut installer en local la base de données et le site PHP de gestion de comptes des LSD : https://github.com/YannZeRookie/lsd-account
 
+Cependant, il est possible de faire tourner le Bot sans aucune base de données, mais dans ce cas certaines fonctions seront désactivées (comme obtenir une url de connexion par exemple).
+Pour désactiver la connexion à une base de données, laisser le champ `host` à `""` dans le fichier `db.json`.
+
 Installation
 ------------
 

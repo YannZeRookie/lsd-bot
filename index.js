@@ -10,17 +10,23 @@ var discordConfig = require('./auth.json');
 var discordBot = BotkitDiscord(discordConfig);
 
 // MySQL
-var mysql = require('mysql');
 var mysqlConfig = require('./db.json');
-var db = mysql.createConnection(mysqlConfig);
+var mysql = null;
+var db = null;
+if (mysqlConfig.host) {
+    mysql = require('mysql');
+    db = mysql.createConnection(mysqlConfig);
 
-// MySQL connexion
-db.connect(function(err) {
-    if (err) {
-        console.log('Could not connect to database');
-        throw err;
-    }
-});
+    // MySQL connexion
+    db.connect(function(err) {
+        if (err) {
+            console.log('Could not connect to database');
+            throw err;
+        }
+    });
+} else {
+    console.log('Running in no database mode');
+}
 
 // Discord events
 discordBot.hears('!connexion','ambient',(bot, msg) => {
@@ -98,12 +104,17 @@ discordBot.on('ready', (bot, event) => {
 });
 
 discordBot.on('disconnect', (bot, event) => {
-    db.end()
+    if (db) {
+        db.end();
+    }
     bot.log('Good-bye!');
 });
 
 function buildConnectionKey(user)
 {
+    if (!db) {
+        return '';
+    }
     key = crypto.randomBytes(20).toString('hex');
     //-- Insert the key in the database for later retrieval from the website
     //   including its username, discriminator and avatar
