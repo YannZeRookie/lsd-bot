@@ -41,7 +41,7 @@ discordBot.hears('!connexion','ambient',(bot, msg) => {
 discordBot.hears('hello','ambient',(bot, msg) => {
 	//console.log(util.inspect(bot));
 	//console.log(util.inspect(msg));
-    bot.reply(msg, 'Received a `h e l l o` ambient from ' + msg.message.author.username);
+    bot.reply(msg, 'Salut à toi ' + msg.message.author.username + ' !');
     //console.log('Replied to hello from ' + msg.message.author.username+ ' msg: ' + msg.message.content);
     //console.log("\n");
 });
