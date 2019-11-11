@@ -40,6 +40,11 @@ Lancement
 
 Le robot devrait apparaître connecté. Tapez `!connexion` dans Discord pour tester.
 
+Développement
+-------------
+
+MS Visual Studio Code est pratique pour débugger l'app.
+
 Production
 ----------
 
