@@ -34,7 +34,7 @@ discordBot.hears('!connexion','ambient',(bot, msg) => {
 	//console.log(util.inspect(msg));
     var key = buildConnectionKey(msg.message.author);
     msg.message.author.send("Voici votre lien de connexion : " + buidLoginUrl(key));
-    bot.reply(msg, 'Je vous ai transmis un lien de connexion par message privé dans Discord');
+    //bot.reply(msg, 'Je vous ai transmis un lien de connexion par message privé dans Discord');
     console.log('Connection request from ' + msg.message.author.username + ' (' + msg.message.author.id + ')');
 });
 
