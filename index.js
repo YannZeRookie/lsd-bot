@@ -28,38 +28,61 @@ if (mysqlConfig.host) {
     console.log('Running in no database mode');
 }
 
-// Discord events
-discordBot.hears('!connexion','ambient',(bot, msg) => {
+/**
+ * Return help message
+ */
+function helpMessage()
+{
+    return "Bonjour, je suis le Bot des Scorpions du Désert. Les commandes commencent par `!`\nVoici la liste : \n\
+      ```\n\
+!inscription          Poste ta candidature pour devenir un ou une LSD !\n\
+!connexion            Connecte-toi sur le site de gestion de ton compte LSD\n\
+!aide, !help, !sos    Obtenir cette aide\n\
+!lance nombre         Lance un dé entre 1 et 'nombre'. Par exemple pour un dé à 6 faces : !lance 6\n\
+      ```";
+}
+
+discordBot.hears('^!connexion','ambient',(bot, msg) => {
 	//console.log(util.inspect(bot));
 	//console.log(util.inspect(msg));
+    if (msg.message.author.id == discordConfig.client.user.id) return; // Don't answer to ourselves
     var key = buildConnectionKey(msg.message.author);
-    msg.message.author.send("Voici votre lien de connexion : " + buidLoginUrl(key));
+    msg.message.author.send("Voici ton lien de connexion : " + buidLoginUrl(key));
     //bot.reply(msg, 'Je vous ai transmis un lien de connexion par message privé dans Discord');
     console.log('Connection request from ' + msg.message.author.username + ' (' + msg.message.author.id + ')');
 });
 
+discordBot.hears('^!inscription','ambient',(bot, msg) => {
+    if (msg.message.author.id == discordConfig.client.user.id) return; // Don't answer to ourselves
+    var key = buildConnectionKey(msg.message.author);
+    msg.message.author.send("Voici ton lien pour t'inscrire : " + buidLoginUrl(key));
+    console.log('Inscription request from ' + msg.message.author.username + ' (' + msg.message.author.id + ')');
+});
+
 discordBot.hears('hello','ambient',(bot, msg) => {
 	//console.log(util.inspect(bot));
-	//console.log(util.inspect(msg));
-    bot.reply(msg, 'Salut à toi ' + msg.message.author.username + ' !');
+    //console.log(util.inspect(msg));
+    if (msg.message.author.id == discordConfig.client.user.id) return; // Don't answer to ourselves
+    bot.reply(msg, 'Salut à toi ' + msg.message.author.username + ' ! Pour avoir de l\'aide, tape `!aide`');
     //console.log('Replied to hello from ' + msg.message.author.username+ ' msg: ' + msg.message.content);
     //console.log("\n");
 });
- 
+
 discordBot.hears('.*', 'direct_message', (bot, msg) => {
 	//console.log(util.inspect(bot));
     //console.log(util.inspect(message));
-    if (msg.message.author.id != "383969620463190017") { // Don't answer to ourselves
-        bot.reply(msg.message, 'Received a direct_message from ' + msg.message.author.username);
-        //console.log('Received a direct_message from ' + msg.message.author.username);
-        //console.log("\n");    
-    }
+    if (msg.message.author.id == discordConfig.client.user.id) return; // Don't answer to ourselves
+    bot.reply(msg.message, helpMessage());
+    //console.log('Received a direct_message from ' + msg.message.author.username);
+    //console.log("\n");    
 });
 
 discordBot.hears('.*', 'direct_mention', (bot, msg) => {
 	//console.log(util.inspect(bot));
 	//console.log(util.inspect(msg));
-    bot.reply(msg.message, 'Received a direct_mention from ' + msg.message.author.username);
+    if (msg.message.author.id == discordConfig.client.user.id) return; // Don't answer to ourselves
+    //bot.reply(msg.message, 'Received a direct_mention from ' + msg.message.author.username);
+    bot.reply(msg, "Salut " + msg.message.author.username + ", si tu as besoin d'aide, tape `!aide`");
     /*
     bot.send({
     	text: "You're talking to me?",
@@ -73,14 +96,33 @@ discordBot.hears('.*', 'direct_mention', (bot, msg) => {
 discordBot.hears('.*', 'mention', (bot, msg) => {
 	//console.log(util.inspect(bot));
 	//console.log(util.inspect(msg));
-    bot.reply(msg.message, 'Received a mention from ' + msg.message.author.username);
+    if (msg.message.author.id == discordConfig.client.user.id) return; // Don't answer to ourselves
+    //bot.reply(msg.message, 'Received a mention from ' + msg.message.author.username);
+    bot.reply(msg, msg.message.author.username + " parle de moi, c'est sympa ! Pour avoir de l'aide, tape `!aide`");
     //console.log('Was mentioned by ' + msg.message.author.username);
     //console.log("\n");
 });
 
-discordBot.hears('!lance .+', 'ambient', (bot, msg) => {
+discordBot.hears('^!aide', 'ambient', (bot, msg) => {
+    if (msg.message.author.id == discordConfig.client.user.id) return; // Don't answer to ourselves
+    bot.reply(msg, helpMessage());
+});
+
+discordBot.hears('^!sos', 'ambient', (bot, msg) => {
+    if (msg.message.author.id == discordConfig.client.user.id) return; // Don't answer to ourselves
+    bot.reply(msg, helpMessage());
+});
+
+discordBot.hears('^!help', 'ambient', (bot, msg) => {
+    if (msg.message.author.id == discordConfig.client.user.id) return; // Don't answer to ourselves
+    bot.reply(msg, helpMessage());
+});
+
+
+discordBot.hears('^!lance .+', 'ambient', (bot, msg) => {
     //console.log(util.inspect(bot));
     //console.log(util.inspect(msg));
+    if (msg.message.author.id == discordConfig.client.user.id) return; // Don't answer to ourselves
     var r = msg.message.content.match(/lance\s+(\d+)/);
     if (r && r[1] && r[1]>1) {
         if (r[1]<=100000000) {
