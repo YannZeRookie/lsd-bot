@@ -1,3 +1,4 @@
 {
+   "prefix": "!",
    "connection_url": "Put the login url of the LSD account website"
 }
