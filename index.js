@@ -101,6 +101,32 @@ discordBot.on('disconnect', (bot, event) => {
 });
 
 /**
+ * Welcome of new members: we send a private message
+ */
+discordBot.on('guildMemberAdd', (bot, members) => {
+    if (members.length) {
+        var member = members[0];
+        member.send(`Salut ${member}, et bienvenue chez les Scorpions du Désert !` + "\n\n" +
+"La guilde Les Scorpions du Désert [LSD] est une guilde multi-jeux organisée en association \
+loi 1901 dont le but est de soutenir ses joueurs autour d'un style de jeu unique : le jeu en groupe. \
+Active depuis 2002, Les Scorpions du Désert est l'une des guildes les plus réputées \
+et les plus actives du monde francophone." + "\n\n" +
+"En tant que simple Visiteur, tu ne verras pas grand-chose sur notre serveur Discord, à part le Bar. \
+Cela te permettra quand même de faire connaissance avec les membres et de leur parler. Un Scorpion peut alors t'inviter \
+ce qui te permettra d'accéder temporairement à tous les canaux des jeux et de jouer avec nous.\n\n" +
+"Si cette expérience te convainc et que tu as envie de devenir un ou une vrai(e) LSD, la procédure d'inscription \
+est très simple et se fait à l'aide de notre Bot. Il te suffit de taper `!inscription` dans un canal, et notre \
+Bot t'enverra un lien de connexion qui t'emmènera sur notre site de gestion de comptes, où tu pourras poser ta \
+candidature. Pour en avoir plus sur notre Bot, tape `!aide`\n\
+À bientôt !"
+        );
+    }
+  });
+
+//--------------------------------------------------------------------------------
+//--------------------------------------------------------------------------------
+
+/**
  * General command processing dispatcher
  * @param {string} command 
  * @param {string} context 
