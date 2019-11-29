@@ -115,9 +115,9 @@ et les plus actives du monde francophone." + "\n\n" +
 Cela te permettra quand même de faire connaissance avec les membres et de leur parler. Un Scorpion peut alors t'inviter \
 ce qui te permettra d'accéder temporairement à tous les canaux des jeux et de jouer avec nous.\n\n" +
 "Si cette expérience te convainc et que tu as envie de devenir un ou une vrai(e) LSD, la procédure d'inscription \
-est très simple et se fait à l'aide de notre Bot. Il te suffit de taper `!inscription` dans un canal, et notre \
+est très simple et se fait à l'aide de notre Bot. Il te suffit de taper `"+config.prefix+"inscription` dans un canal, et notre \
 Bot t'enverra un lien de connexion qui t'emmènera sur notre site de gestion de comptes, où tu pourras poser ta \
-candidature. Pour en avoir plus sur notre Bot, tape `!aide`\n\
+candidature. Pour en savoir plus sur notre Bot, tape `"+config.prefix+"aide`\n\
 À bientôt !"
         );
     }
