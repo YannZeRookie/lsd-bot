@@ -4,13 +4,18 @@ LSD-Bot : le Bot des Scorpions du Désert
 Libraries
 ---------
 
+* Discord JS lib: 
+  * https://discord.js.org/
+  * Tutorial: https://gist.github.com/y21/a599ef74c8746341dbcbd32093a69eb8
+  * Doc: https://discord.js.org/#/docs/main/stable/general/welcome
+  * GitHub: https://github.com/discordjs/discord.js
 * Discord Botkit adaptation: https://github.com/brh55/botkit-discord
 * Botkit:
   * Website: https://botkit.ai/
   * Doc: https://botkit.ai/getstarted.html
   * NPM: https://www.npmjs.com/package/botkit
   * GitHub: https://github.com/howdyai/botkit
-* Mysql JS lib: https://github.com/mysqljs/mysql 
+* Mysql JS lib: https://github.com/mysqljs/mysql
 
 Database
 --------
@@ -45,10 +50,13 @@ Développement
 
 MS Visual Studio Code est pratique pour débugger l'app.
 
+IL est conseillé d'avoir un Bot différent de celui en production. Afin d'éviter que les deux Bots répondent
+en même temps aux commandes, mettre un préfixe différent dans le fichier `config.json` du Bot en développement.
+
 Production
 ----------
 
-Le server est lancé via [nodemon](https://github.com/remy/nodemon). Cela permet un redémarrage automatique dès qu'il détecte qu'un fichier JS a changé. La sortie est envoyée dans `/var/log/syslog`.
+Le server est lancé via [PM2 Plus](https://doc.pm2.io/en/plus/overview/). Cela permet un redémarrage automatique dès qu'il détecte qu'un fichier JS a changé.
 
     $ ./server.sh
 

@@ -141,7 +141,11 @@ function processCommand(command, context, bot, msg)
         case 'connect':
         case 'login':
             var key = buildConnectionKey(msg.message.author);
-            msg.message.author.send("Voici ton lien de connexion : " + buidLoginUrl(key));
+            msg.message.author.send("Voici ton lien de connexion : " + buidLoginUrl(key)).then(
+                (newMessage) => {
+                    newMessage.delete(3600*1000); // Delete the message after one hour because the key will be expired by then
+                }
+            );
             console.log('Connection request from ' + msg.message.author.username + ' (' + msg.message.author.id + ')');
             if (context == 'ambient') {
                 msg.message.delete(4000);   // Remove the message to avoid poluting the channel
@@ -150,7 +154,11 @@ function processCommand(command, context, bot, msg)
         case 'inscription':
         case 'signup':
             var key = buildConnectionKey(msg.message.author);
-            msg.message.author.send("Voici ton lien pour t'inscrire : " + buidLoginUrl(key));
+            msg.message.author.send("Voici ton lien pour t'inscrire : " + buidLoginUrl(key)).then(
+                (newMessage) => {
+                    newMessage.delete(3600*1000); // Delete the message after one hour because the key will be expired by then
+                }
+            );
             console.log('Inscription request from ' + msg.message.author.username + ' (' + msg.message.author.id + ')');
             if (context == 'ambient') {
                 msg.message.delete(4000);   // Remove the message to avoid poluting the channel
