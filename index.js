@@ -234,8 +234,6 @@ function lance(bot, msg)
         else {
             bot.reply(msg.message, "Désolé, je suis limité à 100000000");
         }
-    } else if (msg.message.content.match(/lance\s+.*Totor0/i)) {
-        bot.reply(msg.message, "Désolé, je ne pratique pas le lancer de nains !");
     } else {
         bot.reply(msg.message, "Désolé, je n'ai pas compris. Il me faut un nombre ≥ 2 après la commande");
     }
