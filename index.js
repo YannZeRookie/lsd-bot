@@ -1,6 +1,5 @@
 const BotkitDiscord = require('botkit-discord');
 var util = require('util');
-var crypto = require("crypto");
 
 // Load general configuration settings
 var config = require('./config.json');
@@ -10,29 +9,30 @@ var discordConfig = require('./auth.json');
 var discordBot = BotkitDiscord(discordConfig);
 
 // MySQL
+/*
+ * Note: good article about the asynchronous nature of SQL requests in NodeJS: 
+ * https://codeburst.io/node-js-mysql-and-async-await-6fb25b01b628
+ * And a good one about pools and the right way to do it:
+ * https://evertpot.com/executing-a-mysql-query-in-nodejs/
+*/
 var mysqlConfig = require('./db.json');
 var mysql = null;
 var db = null;
 if (mysqlConfig.host) {
-    mysql = require('mysql');
-    db = mysql.createConnection(mysqlConfig);
-
-    // MySQL connexion
-    db.connect(function(err) {
-        if (err) {
-            console.log('Could not connect to database');
-            throw err;
-        }
-    });
+    const mysql = require('mysql2/promise');
+    db = mysql.createPool(mysqlConfig);
 } else {
     console.log('Running in no database mode');
 }
+
+// Load the LSD tools (users, roles, and sections management)
+var lsd_tools = require('./lsd-tools');
 
 
 /**
  * General listening entry point
  */
-discordBot.hears('^' + config.prefix + '.*','ambient',(bot, msg) => {
+discordBot.hears('^' + config.prefix + '.*', 'ambient', (bot, msg) => {
     if (msg.message.author.id == discordConfig.client.user.id) return; // Don't answer to ourselves
     var words = msg.message.content.substring(1).split(' ');
     if (words.length) {
@@ -40,8 +40,8 @@ discordBot.hears('^' + config.prefix + '.*','ambient',(bot, msg) => {
     }
 });
 
-discordBot.hears('hello','ambient',(bot, msg) => {
-	//console.log(util.inspect(bot));
+discordBot.hears('hello', 'ambient', (bot, msg) => {
+    //console.log(util.inspect(bot));
     //console.log(util.inspect(msg));
     if (msg.message.author.id == discordConfig.client.user.id) return; // Don't answer to ourselves
     processCommand('hello', 'ambient', bot, msg);
@@ -61,14 +61,14 @@ discordBot.hears('.*', 'direct_message', (bot, msg) => {
 });
 
 /**
- * Direct mention = mentionning the Bot during a private message to the Bot
+ * Direct mention = mentioning the Bot during a private message to the Bot
  */
 discordBot.hears('.*', 'direct_mention', (bot, msg) => {
-	//console.log(util.inspect(bot));
-	//console.log(util.inspect(msg));
+    //console.log(util.inspect(bot));
+    //console.log(util.inspect(msg));
     if (msg.message.author.id == discordConfig.client.user.id) return; // Don't answer to ourselves
     //bot.reply(msg.message, 'Received a direct_mention from ' + msg.message.author.username);
-    bot.reply(msg, "Salut " + msg.message.author.username + ", si tu as besoin d'aide, tape `"+config.prefix+"aide`");
+    bot.reply(msg, "Salut " + msg.message.author.username + ", si tu as besoin d'aide, tape `" + config.prefix + "aide`");
     /*
     bot.send({
     	text: "You're talking to me?",
@@ -84,7 +84,7 @@ discordBot.hears('.*', 'direct_mention', (bot, msg) => {
  */
 discordBot.hears('.*', 'mention', (bot, msg) => {
     if (msg.message.author.id == discordConfig.client.user.id) return; // Don't answer to ourselves
-    bot.reply(msg, msg.message.author.username + " parle de moi, c'est sympa ! Pour avoir de l'aide, tape `"+config.prefix+"aide`");
+    bot.reply(msg, msg.message.author.username + " parle de moi, c'est sympa ! Pour avoir de l'aide, tape `" + config.prefix + "aide`");
     //console.log('Was mentioned by ' + msg.message.author.username);
     //console.log("\n");
 });
@@ -133,17 +133,16 @@ candidature. Pour en savoir plus sur notre Bot, tape `"+config.prefix+"aide`\n\
  * @param {*} bot 
  * @param {*} msg 
  */
-function processCommand(command, context, bot, msg)
-{
-    switch(command) {
+function processCommand(command, context, bot, msg) {
+    switch (command) {
         case 'connexion':
         case 'connection':
         case 'connect':
         case 'login':
-            var key = buildConnectionKey(msg.message.author);
+            var key = lsd_tools.buildConnectionKey(db, msg.message.author);
             msg.message.author.send("Voici ton lien de connexion : " + buidLoginUrl(key)).then(
                 (newMessage) => {
-                    newMessage.delete(3600*1000); // Delete the message after one hour because the key will be expired by then
+                    newMessage.delete(3600 * 1000); // Delete the message after one hour because the key will be expired by then
                 }
             );
             console.log('Connection request from ' + msg.message.author.username + ' (' + msg.message.author.id + ')');
@@ -153,10 +152,10 @@ function processCommand(command, context, bot, msg)
             break;
         case 'inscription':
         case 'signup':
-            var key = buildConnectionKey(msg.message.author);
+            var key = lsd_tools.buildConnectionKey(db, msg.message.author);
             msg.message.author.send("Voici ton lien pour t'inscrire : " + buidLoginUrl(key)).then(
                 (newMessage) => {
-                    newMessage.delete(3600*1000); // Delete the message after one hour because the key will be expired by then
+                    newMessage.delete(3600 * 1000); // Delete the message after one hour because the key will be expired by then
                 }
             );
             console.log('Inscription request from ' + msg.message.author.username + ' (' + msg.message.author.id + ')');
@@ -176,45 +175,27 @@ function processCommand(command, context, bot, msg)
             bot.reply(msg, helpMessage());
             break;
         default:
-            bot.reply(msg, "Commande inconnue, tape `"+config.prefix+"aide` pour la liste des commandes disponibles");
+            bot.reply(msg, "Commande inconnue, tape `" + config.prefix + "aide` pour la liste des commandes disponibles");
 
     }
 }
 
-function buildConnectionKey(user)
-{
-    if (!db) {
-        return '';
-    }
-    key = crypto.randomBytes(20).toString('hex');
-    //-- Insert the key in the database for later retrieval from the website
-    //   including its username, discriminator and avatar
-    db.query("INSERT INTO lsd_login SET login_key=?, created_on=unix_timestamp(), discord_id=?, discord_username=?, discord_discriminator=?, discord_avatar=?", 
-            [key, user.id, user.username, user.discriminator, user.avatar], 
-            function(err, results, fields) {
-        if (err) throw err;
-        console.log('Created key=' + key + ' for user_id=' + user.id);
-    });
-    //-- Done
-    return key;
-}
 
-function buidLoginUrl(key)
-{
+
+function buidLoginUrl(key) {
     return config.connection_url + '/' + key;
 }
 
 /**
  * Return help message
  */
-function helpMessage()
-{
-    return "Bonjour, je suis le Bot des Scorpions du Désert. Les commandes commencent par `"+config.prefix+"`\nVoici la liste : \n\
+function helpMessage() {
+    return "Bonjour, je suis le Bot des Scorpions du Désert. Les commandes commencent par `" + config.prefix + "`\nVoici la liste : \n\
       ```\n\
-"+config.prefix+"inscription          Poste ta candidature pour devenir un ou une LSD !\n\
-"+config.prefix+"connexion            Connecte-toi sur le site de gestion de ton compte LSD\n\
-"+config.prefix+"aide, "+config.prefix+"help, "+config.prefix+"sos    Obtenir cette aide\n\
-"+config.prefix+"lance nombre         Lance un dé entre 1 et 'nombre'. Par exemple pour un dé à 6 faces : "+config.prefix+"lance 6\n\
+"+ config.prefix + "inscription          Poste ta candidature pour devenir un ou une LSD !\n\
+"+ config.prefix + "connexion            Connecte-toi sur le site de gestion de ton compte LSD\n\
+"+ config.prefix + "aide, " + config.prefix + "help, " + config.prefix + "sos    Obtenir cette aide\n\
+"+ config.prefix + "lance nombre         Lance un dé entre 1 et 'nombre'. Par exemple pour un dé à 6 faces : " + config.prefix + "lance 6\n\
       ```";
 }
 
@@ -223,11 +204,10 @@ function helpMessage()
  * @param {*} bot 
  * @param {*} msg 
  */
-function lance(bot, msg)
-{
+function lance(bot, msg) {
     var r = msg.message.content.match(/lance\s+(\d+)/);
-    if (r && r[1] && r[1]>1) {
-        if (r[1]<=100000000) {
+    if (r && r[1] && r[1] > 1) {
+        if (r[1] <= 100000000) {
             var result = 1 + Math.floor(Math.random() * Math.floor(r[1]));
             bot.reply(msg.message, 'OK, je lance un dé à ' + r[1] + ' faces ! Résultat : ' + result);
         }

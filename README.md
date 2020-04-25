@@ -4,6 +4,7 @@ LSD-Bot : le Bot des Scorpions du Désert
 Libraries
 ---------
 
+* Creating a Bot: https://discordpy.readthedocs.io/en/latest/discord.html
 * Discord JS lib: 
   * https://discord.js.org/
   * Tutorial: https://gist.github.com/y21/a599ef74c8746341dbcbd32093a69eb8
