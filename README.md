@@ -9,7 +9,12 @@ Libraries
   * https://discord.js.org/
   * Tutorial: https://gist.github.com/y21/a599ef74c8746341dbcbd32093a69eb8
   * Doc: https://discord.js.org/#/docs/main/stable/general/welcome
+  * Great Q&A of basic actions: https://discordjs.guide/popular-topics/common-questions.html
   * GitHub: https://github.com/discordjs/discord.js
+  * Basics about SQL queries using async/wait: https://evertpot.com/executing-a-mysql-query-in-nodejs/
+  * Discord.js: understanding async/await: https://discordjs.guide/additional-info/async-await.html
+  * Good article about async/await in discord.js: https://github.com/AnIdiotsGuide/discordjs-bot-guide/blob/master/other-guides/async-await.md
+
 * Discord Botkit adaptation: https://github.com/brh55/botkit-discord
 * Botkit:
   * Website: https://botkit.ai/
@@ -60,4 +65,21 @@ Production
 Le server est lancé via [PM2 Plus](https://doc.pm2.io/en/plus/overview/). Cela permet un redémarrage automatique dès qu'il détecte qu'un fichier JS a changé.
 
     $ ./server.sh
+
+Notes
+-----
+
+Si lors de l'exécution d'un Promise en utilisant `await` le code sort brusquement de la fonction, c'est signe
+qu'il y a une erreur d'exécution dans le traitement de l'appel `await`. Mettre un try/catch pour enquêter :
+
+    try {
+      const bla = away monPromise(toto, titi);
+    }
+    catch(e) {
+      console.error(e);
+    }
+
+En effet il est possible que l'exception ne soit pas correctement interceptée par l'appelant et vous la ratiez.
+
+La méthode invite() est un bon cocktail d'appels async à DiscordJS et à SQL.
 

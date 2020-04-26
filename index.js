@@ -107,21 +107,21 @@ discordBot.on('guildMemberAdd', (bot, members) => {
     if (members.length) {
         var member = members[0];
         member.send(`Salut ${member}, et bienvenue chez les Scorpions du Désert !` + "\n\n" +
-"La guilde Les Scorpions du Désert [LSD] est une guilde multi-jeux organisée en association \
+            "La guilde Les Scorpions du Désert [LSD] est une guilde multi-jeux organisée en association \
 loi 1901 dont le but est de soutenir ses joueurs autour d'un style de jeu unique : le jeu en groupe. \
 Active depuis 2002, Les Scorpions du Désert est l'une des guildes les plus réputées \
 et les plus actives du monde francophone." + "\n\n" +
-"En tant que simple Visiteur, tu ne verras pas grand-chose sur notre serveur Discord, à part le Bar. \
+            "En tant que simple Visiteur, tu ne verras pas grand-chose sur notre serveur Discord, à part le Bar. \
 Cela te permettra quand même de faire connaissance avec les membres et de leur parler. Un Scorpion peut alors t'inviter \
 ce qui te permettra d'accéder temporairement à tous les canaux des jeux et de jouer avec nous.\n\n" +
-"Si cette expérience te convainc et que tu as envie de devenir un ou une vrai(e) LSD, la procédure d'inscription \
-est très simple et se fait à l'aide de notre Bot. Il te suffit de taper `"+config.prefix+"inscription` dans un canal, et notre \
+            "Si cette expérience te convainc et que tu as envie de devenir un ou une vrai(e) LSD, la procédure d'inscription \
+est très simple et se fait à l'aide de notre Bot. Il te suffit de taper `"+ config.prefix + "inscription` dans un canal, et notre \
 Bot t'enverra un lien de connexion qui t'emmènera sur notre site de gestion de comptes, où tu pourras poser ta \
-candidature. Pour en savoir plus sur notre Bot, tape `"+config.prefix+"aide`\n\
+candidature. Pour en savoir plus sur notre Bot, tape `"+ config.prefix + "aide`\n\
 À bientôt !"
         );
     }
-  });
+});
 
 //--------------------------------------------------------------------------------
 //--------------------------------------------------------------------------------
@@ -174,6 +174,34 @@ function processCommand(command, context, bot, msg) {
         case 'sos':
             bot.reply(msg, helpMessage());
             break;
+        case 'inviter':
+        case 'invite':
+        case 'invitation':
+            var expiration = 7;     // Default delay is 7 days
+            var r = msg.message.content.match(/\s+(\d+)\s*$/);
+            if (r && r[1] && r[1] > 7 && r[1] < 365) {
+                expiration = r[1]
+            }
+            if (!msg.mentions.members.size) {
+                bot.reply(msg, "Erreur : vous devez mentionner au moins une personne à inviter");
+            }
+            msg.mentions.members.forEach(target => {
+                lsd_tools.invite(db, msg.guild, target, msg.member, expiration)
+                    .then(exp => {
+                        bot.reply(msg, "Invitation réussie de " + (target.nickname ? target.nickname : target.displayName));
+                        // Send a private message to the invited user, with explanations
+                        target.send("Félicitations, tu as désormais le statut d'Invité sur le serveur des Scorpions du Désert ! \
+Ceci te permet de circuler et de communiquer sur tous les canaux de notre serveur Discord.\n\
+Attention, tu redeviendras automatiquement simple visiteur au bout de " + exp + " jours, après quoi \
+il faudra qu'un Scorpion t'invite de nouveau.\n\
+Nous espérons que ton passage chez nous te plaîra et, qui saît ?, te décidera à nous rejoindre.\n\
+Bonne visite ! - Les Scorpions du Désert");
+                    })
+                    .catch(err => {
+                        bot.reply(msg, err);
+                    });
+            });
+            break;
         default:
             bot.reply(msg, "Commande inconnue, tape `" + config.prefix + "aide` pour la liste des commandes disponibles");
 
@@ -194,6 +222,8 @@ function helpMessage() {
       ```\n\
 "+ config.prefix + "inscription          Poste ta candidature pour devenir un ou une LSD !\n\
 "+ config.prefix + "connexion            Connecte-toi sur le site de gestion de ton compte LSD\n\
+"+ config.prefix + "inviter @Toto        Inviter un Visiteur pour 7 jours (Scorpions uniquement)\n\
+"+ config.prefix + "inviter @Toto 42     Inviter un Visiteur pour un nombre de jours précis (Officiers ou + uniquement)\n\
 "+ config.prefix + "aide, " + config.prefix + "help, " + config.prefix + "sos    Obtenir cette aide\n\
 "+ config.prefix + "lance nombre         Lance un dé entre 1 et 'nombre'. Par exemple pour un dé à 6 faces : " + config.prefix + "lance 6\n\
       ```";
