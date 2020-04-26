@@ -191,11 +191,11 @@ function processCommand(command, context, bot, msg) {
                         bot.reply(msg, "Invitation réussie de " + (target.nickname ? target.nickname : target.displayName));
                         // Send a private message to the invited user, with explanations
                         target.send("Félicitations, tu as désormais le statut d'Invité sur le serveur des Scorpions du Désert ! \
-Ceci te permet de circuler et de communiquer sur tous les canaux de notre serveur Discord.\n\
+Ceci te permet de circuler et de communiquer sur tous les canaux ouverts aux invités de notre serveur Discord.\n\
 Attention, tu redeviendras automatiquement simple visiteur au bout de " + exp + " jours, après quoi \
 il faudra qu'un Scorpion t'invite de nouveau.\n\
 Nous espérons que ton passage chez nous te plaîra et, qui saît ?, te décidera à nous rejoindre.\n\
-Bonne visite ! - Les Scorpions du Désert");
+Bon séjour parmi nous ! - Les Scorpions du Désert");
                     })
                     .catch(err => {
                         bot.reply(msg, err);
