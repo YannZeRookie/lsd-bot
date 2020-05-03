@@ -176,12 +176,12 @@ async function degrade_invite(db, guild, invitation, invite_role) {
  */
 async function reviewInvites(db, guild) {
     try {
-        const invite_role = guild.roles.find(role => role.name === 'Invité');
+        const invite_role = guild ? guild.roles.find(role => role.name === 'Invité') : null;
         //-- Find timed-out invitations
         const found_res = await db.query("SELECT * FROM lsd_invitations WHERE created_on + expiration*24*3600 < unix_timestamp()");
-        found_res[0].forEach(invitation => {
-            degrade_invite(db, guild, invitation, invite_role);
-        });
+        for (const invitation of found_res[0]) {
+            await degrade_invite(db, guild, invitation, invite_role);
+        }
 
         //-- Shoot down a few invites who do not have any invitations
         //   Note: the following is an example of iterating thru a Collection in sync mode
@@ -190,17 +190,18 @@ async function reviewInvites(db, guild) {
             const member = m[1];
             if (loners.length <= 20) {
                 const res = await db.query("SELECT id FROM lsd_invitations WHERE discord_id=?", [member.id]);
+                //if ((res[0].length == 0) && (member.id == "404722937183076354")) {
                 if (res[0].length == 0) {
                     loners.push(member);
                 }
             }
         };
-        loners.forEach(member => {
-            degrade_invite(db, guild, {
+        for (const member of loners) {
+            await degrade_invite(db, guild, {
                 discord_id: member.id,
                 discord_username: member.displayName
             }, invite_role);
-        });
+        }
     }
     catch (e) {
         console.error(e);
