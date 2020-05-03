@@ -117,7 +117,97 @@ async function invite(db, guild, target, cur_user, expiration) {
     return expiration;
 }
 
+/**
+ * 
+ * @param {*} db Database
+ * @param {*} guild Guild
+ * @param {*} invitation from the lsd_invitations table
+ */
+async function degrade_invite(db, guild, invitation, invite_role) {
+    if (guild == null) return;
+    var target_member = guild.members.get(invitation.discord_id);
+    if (target_member == undefined) return;
+    var is_invite = target_member.roles.some(role => { return role.name == 'Invité'; });
+    if (is_invite) {
+        // Change Role
+        await target_member.removeRole(invite_role);
+        // Send PM to target
+        var message = "Bonjour, c'est le Bot du serveur Discord des Scorpions du Désert !\n" +
+        "Je t'ai automatiquement repassé(e) en simple Visiteur. J'espère que ton passage sur notre serveur s'est bien passé.\n" +
+        "Si tu souhaites de nouveau jouer avec nous, deux solutions :\n" +
+        "- Soit tu te fais ré-inviter";
+        if (invitation.by_discord_id) {
+            message += " (c'était **" + invitation.by_discord_username + "** qui s'était occupé de toi la dernière fois)"
+        }
+        message += "\n- Soit tu décides de nous rejoindre pour de bon ! Il te suffit de taper ici la commande `!inscription` et je te guiderai vers notre site web\n" +
+        "À bientôt j'espère ! - Les LSD";
+        target_member.send(message);
+        // PM to the user who created the invitations
+        if (invitation.by_discord_id) {
+            var by_member = guild.members.get(invitation.by_discord_id);
+            if (by_member) {
+                by_member.send(`Ton invité(e) **${invitation.discord_username}** a été rétrogradé en simple Visiteur.` + "\n" +
+                "Un message lui a été envoyé pour lui expliquer quoi faire pour se faire ré-inviter ou pour s'inscrire pour de bon."
+                );
+            }
+        }
+    }
+    // If present in database, change role there too
+    await db.query("UPDATE lsd_roles as r \
+        INNER JOIN lsd_users as u ON u.discord_id=? \
+        SET r.role='visiteur' \
+        WHERE r.user_id=u.id AND r.role='invite' ", [invitation.discord_id]);
+    // TODO: add a log entry
+
+    // Remove invitation from database
+    if (invitation.id) {
+        await db.query("DELETE FROM lsd_invitations WHERE id=? ", [invitation.id]);
+    }
+
+    // Done
+    console.log(`Invitation automatic roll-back of ${invitation.discord_username} (${invitation.discord_id})`);
+}
+
+
+/**
+ * Review the invites and turn some of them back to visiteurs
+ * @param {*} db Database
+ * @param {*} guild Guild (aka LSD Server)
+ */
+async function reviewInvites(db, guild) {
+    try {
+        const invite_role = guild.roles.find(role => role.name === 'Invité');
+        //-- Find timed-out invitations
+        const found_res = await db.query("SELECT * FROM lsd_invitations WHERE created_on + expiration*24*3600 < unix_timestamp()");
+        found_res[0].forEach(invitation => {
+            degrade_invite(db, guild, invitation, invite_role);
+        });
+
+        //-- Shoot down a few invites who do not have any invitations
+        //   Note: the following is an example of iterating thru a Collection in sync mode
+        var loners = [];
+        for(const m of invite_role.members) {
+            const member = m[1];
+            if (loners.length <= 20) {
+                const res = await db.query("SELECT id FROM lsd_invitations WHERE discord_id=?", [member.id]);
+                if (res[0].length == 0) {
+                    loners.push(member);
+                }
+            }
+        };
+        loners.forEach(member => {
+            degrade_invite(db, guild, {
+                discord_id: member.id,
+                discord_username: member.displayName
+            }, invite_role);
+        });
+    }
+    catch (e) {
+        console.error(e);
+    }
+}
 
 exports.buildConnectionKey = buildConnectionKey;
 exports.getSections = getSections;
 exports.invite = invite;
+exports.reviewInvites = reviewInvites;

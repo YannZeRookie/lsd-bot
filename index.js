@@ -28,6 +28,14 @@ if (mysqlConfig.host) {
 // Load the LSD tools (users, roles, and sections management)
 var lsd_tools = require('./lsd-tools');
 
+// Cron jobs, see https://www.npmjs.com/package/node-cron
+// Format:
+// Seconds(0-59) Minutes(0-59) Hours(0-23) Day_of_Month(1-31) Months(0-11 for Jan-Dec) Day_of_Week(0-6 for Sun-Sat)
+const cron = require("node-cron");
+cron.schedule('0 0 11 * * *', () => {
+    var guild = discordBot.config.client.guilds.get(config.guild_id);
+    lsd_tools.reviewInvites(db, guild);
+});
 
 /**
  * General listening entry point
@@ -182,7 +190,7 @@ function processCommand(command, context, bot, msg) {
             if (r && r[1] && r[1] > 7 && r[1] < 365) {
                 expiration = r[1]
             }
-            if (!msg.mentions.members.size) {
+            if (!msg.mentions.members || !msg.mentions.members.size) {
                 bot.reply(msg, "Erreur : vous devez mentionner au moins une personne à inviter");
             }
             msg.mentions.members.forEach(target => {

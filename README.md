@@ -9,7 +9,9 @@ Libraries
   * https://discord.js.org/
   * Tutorial: https://gist.github.com/y21/a599ef74c8746341dbcbd32093a69eb8
   * Doc: https://discord.js.org/#/docs/main/stable/general/welcome
-  * Great Q&A of basic actions: https://discordjs.guide/popular-topics/common-questions.html
+  * Great Q&A of basic actions: 
+    * https://discordjs.guide/popular-topics/common-questions.html
+    * https://github.com/AnIdiotsGuide/discordjs-bot-guide/blob/master/frequently-asked-questions.md
   * GitHub: https://github.com/discordjs/discord.js
   * Basics about SQL queries using async/wait: https://evertpot.com/executing-a-mysql-query-in-nodejs/
   * Discord.js: understanding async/await: https://discordjs.guide/additional-info/async-await.html
