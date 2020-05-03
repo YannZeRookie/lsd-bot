@@ -31,11 +31,13 @@ var lsd_tools = require('./lsd-tools');
 // Cron jobs, see https://www.npmjs.com/package/node-cron
 // Format:
 // Seconds(0-59) Minutes(0-59) Hours(0-23) Day_of_Month(1-31) Months(0-11 for Jan-Dec) Day_of_Week(0-6 for Sun-Sat)
-const cron = require("node-cron");
-cron.schedule('0 52 11 * * *', () => {
-    var guild = discordBot.config.client.guilds.get(config.guild_id);
-    lsd_tools.reviewInvites(db, guild);
-});
+if (!config.noCron) {
+    const cron = require("node-cron");
+    cron.schedule('0 0 13 * * *', () => {
+        var guild = discordBot.config.client.guilds.get(config.guild_id);
+        lsd_tools.reviewInvites(db, guild);
+    });    
+}
 
 /**
  * General listening entry point
@@ -156,6 +158,17 @@ function processCommand(command, context, bot, msg) {
             console.log('Connection request from ' + msg.message.author.username + ' (' + msg.message.author.id + ')');
             if (context == 'ambient') {
                 msg.message.delete(4000);   // Remove the message to avoid poluting the channel
+            }
+            break;
+        case 'restart':
+            const guild = discordBot.config.client.guilds.get(config.guild_id);
+            if (guild) {
+                const member = guild.members.get(msg.message.author.id);
+                if (member && member.roles.some(role => { return role.name == 'Admin'; })) {
+                    msg.message.author.send("Redémarrage du Bot").then(() => {
+                        process.exit(1);
+                    });
+                }
             }
             break;
         case 'inscription':

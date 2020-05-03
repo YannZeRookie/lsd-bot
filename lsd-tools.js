@@ -124,48 +124,54 @@ async function invite(db, guild, target, cur_user, expiration) {
  * @param {*} invitation from the lsd_invitations table
  */
 async function degrade_invite(db, guild, invitation, invite_role) {
-    if (guild == null) return;
-    var target_member = guild.members.get(invitation.discord_id);
-    if (target_member == undefined) return;
-    var is_invite = target_member.roles.some(role => { return role.name == 'Invité'; });
-    if (is_invite) {
-        // Change Role
-        await target_member.removeRole(invite_role);
-        // Send PM to target
-        var message = "Bonjour, c'est le Bot du serveur Discord des Scorpions du Désert !\n" +
-        "Je t'ai automatiquement repassé(e) en simple Visiteur. J'espère que ton passage sur notre serveur s'est bien passé.\n" +
-        "Si tu souhaites de nouveau jouer avec nous, deux solutions :\n" +
-        "- Soit tu te fais ré-inviter";
-        if (invitation.by_discord_id) {
-            message += " (c'était **" + invitation.by_discord_username + "** qui s'était occupé de toi la dernière fois)"
-        }
-        message += "\n- Soit tu décides de nous rejoindre pour de bon ! Il te suffit de taper ici la commande `!inscription` et je te guiderai vers notre site web\n" +
-        "À bientôt j'espère ! - Les LSD";
-        await target_member.send(message);
-        // PM to the user who created the invitations
-        if (invitation.by_discord_id) {
-            var by_member = guild.members.get(invitation.by_discord_id);
-            if (by_member) {
-                await by_member.send(`Ton invité(e) **${invitation.discord_username}** a été rétrogradé en simple Visiteur.` + "\n" +
-                "Un message lui a été envoyé pour lui expliquer quoi faire pour se faire ré-inviter ou pour s'inscrire pour de bon."
-                );
+    try {
+        if (guild == null) return;
+        var target_member = guild.members.get(invitation.discord_id);
+        if (target_member == undefined) return;
+        var is_invite = target_member.roles.some(role => { return role.name == 'Invité'; });
+        if (is_invite) {
+            // Change Role
+            await target_member.removeRole(invite_role);
+            // Send PM to target
+            var message = "Bonjour, c'est le Bot du serveur Discord des Scorpions du Désert !\n" +
+                "Je t'ai automatiquement repassé(e) en simple Visiteur. J'espère que ton passage sur notre serveur s'est bien passé.\n" +
+                "Si tu souhaites de nouveau jouer avec nous, deux solutions :\n" +
+                "- Soit tu te fais ré-inviter";
+            if (invitation.by_discord_id) {
+                message += " (c'était **" + invitation.by_discord_username + "** qui s'était occupé de toi la dernière fois)"
+            }
+            message += "\n- Soit tu décides de nous rejoindre pour de bon ! Il te suffit de taper ici la commande `!inscription` et je te guiderai vers notre site web\n" +
+                "À bientôt j'espère ! - Les LSD";
+            await target_member.send(message);
+            // PM to the user who created the invitations
+            if (invitation.by_discord_id) {
+                var by_member = guild.members.get(invitation.by_discord_id);
+                if (by_member) {
+                    await by_member.send(`Ton invité(e) **${invitation.discord_username}** a été rétrogradé en simple Visiteur.` + "\n" +
+                        "Un message lui a été envoyé pour lui expliquer quoi faire pour se faire ré-inviter ou pour s'inscrire pour de bon."
+                    );
+                }
             }
         }
-    }
-    // If present in database, change role there too
-    await db.query("UPDATE lsd_roles as r \
-        INNER JOIN lsd_users as u ON u.discord_id=? \
-        SET r.role='visiteur' \
-        WHERE r.user_id=u.id AND r.role='invite' ", [invitation.discord_id]);
-    // TODO: add a log entry
+        // If present in database, change role there too
+        await db.query("UPDATE lsd_roles as r \
+            INNER JOIN lsd_users as u ON u.discord_id=? \
+            SET r.role='visiteur' \
+            WHERE r.user_id=u.id AND r.role='invite' ", [invitation.discord_id]);
+        // TODO: add a log entry
 
-    // Remove invitation from database
-    if (invitation.id) {
-        await db.query("DELETE FROM lsd_invitations WHERE id=? ", [invitation.id]);
-    }
+        // Remove invitation from database
+        if (invitation.id) {
+            await db.query("DELETE FROM lsd_invitations WHERE id=? ", [invitation.id]);
+        }
 
-    // Done
-    console.log(`Invitation automatic roll-back of ${invitation.discord_username} (${invitation.discord_id})`);
+        // Done
+        console.log(`Invitation automatic roll-back of ${invitation.discord_username} (${invitation.discord_id})`);
+    }
+    catch (e) {
+        console.error(`Error with Invitation roll-back of ${invitation.discord_username} (${invitation.discord_id}):`);
+        console.error(e);
+    }
 }
 
 
