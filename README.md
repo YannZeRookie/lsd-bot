@@ -68,6 +68,30 @@ Le server est lancé via [PM2 Plus](https://doc.pm2.io/en/plus/overview/). Cela 
 
     $ ./server.sh
 
+### Installation d'une version qui a des nouveaux packages, cold restart :
+
+- Stopper le bot :
+```
+    # pm2 stop LSD-bot
+```
+- Se connecter avec l'utilisateur `deploy` puis aller dans le directory :
+```
+    # su deploy
+    $ cd /var/www/lsd/bot
+```
+- Mettre à jour :
+```
+    $ git checkout package-lock.json
+    $ git pull
+    $ npm install
+    $ exit
+```
+- Lancer le bot :
+```
+    # pm2 start LSD-bot
+    # pm2 ps
+```
+
 Notes
 -----
 
