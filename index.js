@@ -32,7 +32,7 @@ var lsd_tools = require('./lsd-tools');
 // Format:
 // Seconds(0-59) Minutes(0-59) Hours(0-23) Day_of_Month(1-31) Months(0-11 for Jan-Dec) Day_of_Week(0-6 for Sun-Sat)
 const cron = require("node-cron");
-cron.schedule('0 33 11 * * *', () => {
+cron.schedule('0 52 11 * * *', () => {
     var guild = discordBot.config.client.guilds.get(config.guild_id);
     lsd_tools.reviewInvites(db, guild);
 });

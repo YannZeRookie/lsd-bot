@@ -141,12 +141,12 @@ async function degrade_invite(db, guild, invitation, invite_role) {
         }
         message += "\n- Soit tu décides de nous rejoindre pour de bon ! Il te suffit de taper ici la commande `!inscription` et je te guiderai vers notre site web\n" +
         "À bientôt j'espère ! - Les LSD";
-        target_member.send(message);
+        await target_member.send(message);
         // PM to the user who created the invitations
         if (invitation.by_discord_id) {
             var by_member = guild.members.get(invitation.by_discord_id);
             if (by_member) {
-                by_member.send(`Ton invité(e) **${invitation.discord_username}** a été rétrogradé en simple Visiteur.` + "\n" +
+                await by_member.send(`Ton invité(e) **${invitation.discord_username}** a été rétrogradé en simple Visiteur.` + "\n" +
                 "Un message lui a été envoyé pour lui expliquer quoi faire pour se faire ré-inviter ou pour s'inscrire pour de bon."
                 );
             }
