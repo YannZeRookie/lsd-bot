@@ -51,8 +51,6 @@ discordBot.hears('^' + config.prefix + '.*', 'ambient', (bot, msg) => {
 });
 
 discordBot.hears('hello', 'ambient', (bot, msg) => {
-    //console.log(util.inspect(bot));
-    //console.log(util.inspect(msg));
     if (msg.message.author.id == discordConfig.client.user.id) return; // Don't answer to ourselves
     processCommand('hello', 'ambient', bot, msg);
 });
@@ -74,8 +72,6 @@ discordBot.hears('.*', 'direct_message', (bot, msg) => {
  * Direct mention = mentioning the Bot during a private message to the Bot
  */
 discordBot.hears('.*', 'direct_mention', (bot, msg) => {
-    //console.log(util.inspect(bot));
-    //console.log(util.inspect(msg));
     if (msg.message.author.id == discordConfig.client.user.id) return; // Don't answer to ourselves
     //bot.reply(msg.message, 'Received a direct_mention from ' + msg.message.author.username);
     bot.reply(msg, "Salut " + msg.message.author.username + ", si tu as besoin d'aide, tape `" + config.prefix + "aide`");
@@ -144,11 +140,12 @@ candidature. Pour en savoir plus sur notre Bot, tape `"+ config.prefix + "aide`\
  * @param {*} msg 
  */
 function processCommand(command, context, bot, msg) {
-    switch (command) {
+    switch (command.toLowerCase()) {
         case 'connexion':
         case 'connection':
         case 'connect':
         case 'login':
+        case 'c':
             var key = lsd_tools.buildConnectionKey(db, msg.message.author);
             msg.message.author.send("Voici ton lien de connexion : " + buidLoginUrl(key)).then(
                 (newMessage) => {
@@ -197,7 +194,9 @@ function processCommand(command, context, bot, msg) {
             break;
         case 'inviter':
         case 'invite':
+        case 'invit':
         case 'invitation':
+        case 'i':
             var expiration = 7;     // Default delay is 7 days
             var r = msg.message.content.match(/\s+(\d+)\s*$/);
             if (r && r[1] && r[1] > 7 && r[1] < 365) {
