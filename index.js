@@ -33,10 +33,10 @@ var lsd_tools = require('./lsd-tools');
 // Seconds(0-59) Minutes(0-59) Hours(0-23) Day_of_Month(1-31) Months(0-11 for Jan-Dec) Day_of_Week(0-6 for Sun-Sat)
 if (!config.noCron) {
     const cron = require("node-cron");
-    cron.schedule('0 0 13 * * *', () => {
+    cron.schedule('0 0 16 * * *', () => {
         var guild = discordBot.config.client.guilds.get(config.guild_id);
         lsd_tools.reviewInvites(db, guild);
-    });    
+    });
 }
 
 /**
@@ -197,30 +197,49 @@ function processCommand(command, context, bot, msg) {
         case 'invit':
         case 'invitation':
         case 'i':
-            var expiration = 7;     // Default delay is 7 days
-            var r = msg.message.content.match(/\s+(\d+)\s*$/);
-            if (r && r[1] && r[1] > 7 && r[1] < 365) {
-                expiration = r[1]
-            }
-            if (!msg.mentions.members || !msg.mentions.members.size) {
-                bot.reply(msg, "Erreur : vous devez mentionner au moins une personne à inviter");
-            }
-            msg.mentions.members.forEach(target => {
-                lsd_tools.invite(db, msg.guild, target, msg.member, expiration)
-                    .then(exp => {
-                        bot.reply(msg, "Invitation réussie de " + (target.nickname ? target.nickname : target.displayName));
-                        // Send a private message to the invited user, with explanations
-                        target.send("Félicitations, tu as désormais le statut d'Invité sur le serveur des Scorpions du Désert ! \
-Ceci te permet de circuler et de communiquer sur tous les canaux ouverts aux invités de notre serveur Discord.\n\
-Attention, tu redeviendras automatiquement simple visiteur au bout de " + exp + " jours, après quoi \
-il faudra qu'un Scorpion t'invite de nouveau.\n\
-Nous espérons que ton passage chez nous te plaîra et, qui saît ?, te décidera à nous rejoindre.\n\
-Bon séjour parmi nous ! - Les Scorpions du Désert");
+            try {
+                msg.guild.fetchMember(msg.user, false)
+                    .then(cur_member => {
+                        var expiration = 7;     // Default delay is 7 days
+                        var r = msg.message.content.match(/\s+(\d+)\s*$/);
+                        if (r && r[1] && r[1] > 7 && r[1] < 365) {
+                            expiration = r[1]
+                        }
+                        if (!msg.mentions.users || !msg.mentions.users.size) {
+                            bot.reply(msg, "Erreur : vous devez mentionner au moins une personne à inviter");
+                        }
+                        for (var target_user of msg.mentions.users) {
+                            /* msg.mentions.users.forEach(target => { */
+                            msg.guild.fetchMember(target_user[1], false)
+                                .then(target_member => {
+                                    lsd_tools.invite(db, msg.guild, target_member, cur_member, expiration)
+                                        .then(exp => {
+                                            bot.reply(msg, "Invitation réussie de " + (target_member.nickname ? target_member.nickname : target_member.displayName));
+                                            // Send a private message to the invited user, with explanations
+                                            target_member.send("Félicitations, tu as désormais le statut d'Invité sur le serveur des Scorpions du Désert ! \
+            Ceci te permet de circuler et de communiquer sur tous les canaux ouverts aux invités de notre serveur Discord.\n\
+            Attention, tu redeviendras automatiquement simple visiteur au bout de " + exp + " jours, après quoi \
+            il faudra qu'un Scorpion t'invite de nouveau.\n\
+            Nous espérons que ton passage chez nous te plaîra et, qui saît ?, te décidera à nous rejoindre.\n\
+            Bon séjour parmi nous ! - Les Scorpions du Désert");
+                                        })
+                                        .catch(err => {
+                                            bot.reply(msg, err);
+                                        });
+                                })
+                                .catch(err => {
+                                    bot.reply(msg, err);
+                                });
+                        }; //for
                     })
                     .catch(err => {
                         bot.reply(msg, err);
                     });
-            });
+            }
+            catch (e) {
+                console.error(e);
+            }
+
             break;
         default:
             bot.reply(msg, "Commande inconnue, tape `" + config.prefix + "aide` pour la liste des commandes disponibles");

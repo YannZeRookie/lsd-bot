@@ -9,6 +9,7 @@ Libraries
   * https://discord.js.org/
   * Tutorial: https://gist.github.com/y21/a599ef74c8746341dbcbd32093a69eb8
   * Doc: https://discord.js.org/#/docs/main/stable/general/welcome
+  * Doc for v11: https://discord.js.org/#/docs/main/v11/general/welcome
   * Great Q&A of basic actions: 
     * https://discordjs.guide/popular-topics/common-questions.html
     * https://github.com/AnIdiotsGuide/discordjs-bot-guide/blob/master/frequently-asked-questions.md
