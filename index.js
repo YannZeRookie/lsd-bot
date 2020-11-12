@@ -33,7 +33,7 @@ var lsd_tools = require('./lsd-tools');
 // Seconds(0-59) Minutes(0-59) Hours(0-23) Day_of_Month(1-31) Months(0-11 for Jan-Dec) Day_of_Week(0-6 for Sun-Sat)
 if (!config.noCron) {
     const cron = require("node-cron");
-    cron.schedule('0 0 16 * * *', () => {
+    cron.schedule('0 45 17 * * *', () => {
         var guild = discordBot.config.client.guilds.get(config.guild_id);
         lsd_tools.reviewInvites(db, guild);
     });
@@ -217,11 +217,11 @@ function processCommand(command, context, bot, msg) {
                                             bot.reply(msg, "Invitation réussie de " + (target_member.nickname ? target_member.nickname : target_member.displayName));
                                             // Send a private message to the invited user, with explanations
                                             target_member.send("Félicitations, tu as désormais le statut d'Invité sur le serveur des Scorpions du Désert ! \
-            Ceci te permet de circuler et de communiquer sur tous les canaux ouverts aux invités de notre serveur Discord.\n\
-            Attention, tu redeviendras automatiquement simple visiteur au bout de " + exp + " jours, après quoi \
-            il faudra qu'un Scorpion t'invite de nouveau.\n\
-            Nous espérons que ton passage chez nous te plaîra et, qui saît ?, te décidera à nous rejoindre.\n\
-            Bon séjour parmi nous ! - Les Scorpions du Désert");
+Ceci te permet de circuler et de communiquer sur tous les canaux ouverts aux invités de notre serveur Discord.\n\
+Attention, tu redeviendras automatiquement simple visiteur au bout de " + exp + " jours, après quoi \
+il faudra qu'un Scorpion t'invite de nouveau.\n\
+Nous espérons que ton passage chez nous te plaîra et, qui saît ?, te décidera à nous rejoindre.\n\
+Bon séjour parmi nous ! - Les Scorpions du Désert");
                                         })
                                         .catch(err => {
                                             bot.reply(msg, err);
@@ -239,7 +239,30 @@ function processCommand(command, context, bot, msg) {
             catch (e) {
                 console.error(e);
             }
+            break;
+        case 'uninvite':
+        case 'ui':
+            /* test message for YannZeGrunt : 
+            *  §uninvite <@!404722937183076354>
+            * */
 
+            if (!msg.mentions.users || !msg.mentions.users.size) {
+                bot.reply(msg, "Erreur : vous devez mentionner au moins une personne à dé-inviter");
+            }
+            const invite_role = msg.guild.roles.find(role => role.name === 'Invité');
+            for (var target_user of msg.mentions.users) {
+                msg.guild.fetchMember(target_user[1], false)
+                    .then(target_member => {
+                        lsd_tools.degrade_invite(db, msg.guild, {
+                            discord_id: target_member.id,
+                            discord_username: target_member.displayName,
+                            by_discord_id: msg.user.id
+                        }, invite_role);
+                    })
+                    .catch(err => {
+                        bot.reply(msg, err);
+                    });
+            }//for
             break;
         default:
             bot.reply(msg, "Commande inconnue, tape `" + config.prefix + "aide` pour la liste des commandes disponibles");
