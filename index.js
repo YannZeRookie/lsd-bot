@@ -307,11 +307,11 @@ function helpMessage() {
  */
 function sortcutsMessage() {
     var msg = "Raccourcis et synonymes des commandes :\n" +
-        "`!connexion`:  `!connection`, `!connect`, `!login`, `!c`\n" +
-        "`!inscription`:  `!signup`, `!go` \n" +
-        "`!inviter`:  `!invite`, `!invit`, `!invitation`, `!i`\n" +
-        "`!aide`:  `!help`, `!sos`, `!a`\n" +
-        "`!raccourcis`:  `!shortcuts`, `!short`, `!synomynmes`, `!r`\n" +
+        "`!connexion  ` :  `!connection`, `!connect`, `!login`, `!c`\n" +
+        "`!inscription` :  `!signup`, `!go` \n" +
+        "`!inviter    ` :  `!invite`, `!invit`, `!invitation`, `!i`\n" +
+        "`!aide       ` :  `!help`, `!sos`, `!a`\n" +
+        "`!raccourcis ` :  `!shortcuts`, `!short`, `!synomynmes`, `!r`\n" +
         ""
         ;
     return msg.replace(/!/g, config.prefix);
