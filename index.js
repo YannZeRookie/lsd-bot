@@ -170,6 +170,7 @@ function processCommand(command, context, bot, msg) {
             break;
         case 'inscription':
         case 'signup':
+        case 'go':
             var key = lsd_tools.buildConnectionKey(db, msg.message.author);
             msg.message.author.send("Voici ton lien pour t'inscrire : " + buidLoginUrl(key)).then(
                 (newMessage) => {
@@ -186,11 +187,6 @@ function processCommand(command, context, bot, msg) {
             break;
         case 'lance':
             lance(bot, msg);
-            break;
-        case 'help':
-        case 'aide':
-        case 'sos':
-            bot.reply(msg, helpMessage());
             break;
         case 'inviter':
         case 'invite':
@@ -244,7 +240,7 @@ Bon séjour parmi nous ! - Les Scorpions du Désert");
         case 'ui':
             /* test message for YannZeGrunt : 
             *  §uninvite <@!404722937183076354>
-            * */
+            */
 
             if (!msg.mentions.users || !msg.mentions.users.size) {
                 bot.reply(msg, "Erreur : vous devez mentionner au moins une personne à dé-inviter");
@@ -264,6 +260,19 @@ Bon séjour parmi nous ! - Les Scorpions du Désert");
                     });
             }//for
             break;
+        case 'aide':
+        case 'help':
+        case 'sos':
+        case 'a':
+            bot.reply(msg, helpMessage());
+            break;
+        case 'raccourcis':
+        case 'shortcuts':
+        case 'short':
+        case 'synomynmes':
+        case 'r':
+            bot.reply(msg, sortcutsMessage());
+            break;
         default:
             bot.reply(msg, "Commande inconnue, tape `" + config.prefix + "aide` pour la liste des commandes disponibles");
 
@@ -280,15 +289,32 @@ function buidLoginUrl(key) {
  * Return help message
  */
 function helpMessage() {
-    return "Bonjour, je suis le Bot des Scorpions du Désert. Les commandes commencent par `" + config.prefix + "`\nVoici la liste : \n\
+    var msg = "Bonjour, je suis le Bot des Scorpions du Désert. Les commandes commencent par `!`\nVoici la liste : \n\
       ```\n\
-"+ config.prefix + "inscription          Poste ta candidature pour devenir un ou une LSD !\n\
-"+ config.prefix + "connexion            Connecte-toi sur le site de gestion de ton compte LSD\n\
-"+ config.prefix + "inviter @Toto        Inviter un Visiteur pour 7 jours (Scorpions uniquement)\n\
-"+ config.prefix + "inviter @Toto 42     Inviter un Visiteur pour un nombre de jours précis (Officiers ou + uniquement)\n\
-"+ config.prefix + "aide, " + config.prefix + "help, " + config.prefix + "sos    Obtenir cette aide\n\
-"+ config.prefix + "lance nombre         Lance un dé entre 1 et 'nombre'. Par exemple pour un dé à 6 faces : " + config.prefix + "lance 6\n\
+!inscription        Poste ta candidature pour devenir un ou une LSD !\n\
+!connexion          Connecte-toi sur le site de gestion de ton compte LSD\n\
+!inviter @Toto      Inviter un Visiteur pour 7 jours (Scorpions uniquement)\n\
+!inviter @Toto 42   Inviter un Visiteur pour un nombre de jours précis (Officiers ou + uniquement)\n\
+!aide               Obtenir cette aide\n\
+!lance nombre       Lance un dé entre 1 et 'nombre'. Ex : dé à 6 faces : !lance 6\n\
+!raccourcis         Alternatives courtes des commandes\n\
       ```";
+      return msg.replace(/!/g, config.prefix);
+    }
+
+/**
+ * Return shortcut messages;
+ */
+function sortcutsMessage() {
+    var msg = "Raccourcis et synonymes des commandes :\n" +
+        "`!connexion`:  `!connection`, `!connect`, `!login`, `!c`\n" +
+        "`!inscription`:  `!signup`, `!go` \n" +
+        "`!inviter`:  `!invite`, `!invit`, `!invitation`, `!i`\n" +
+        "`!aide`:  `!help`, `!sos`, `!a`\n" +
+        "`!raccourcis`:  `!shortcuts`, `!short`, `!synomynmes`, `!r`\n" +
+        ""
+        ;
+    return msg.replace(/!/g, config.prefix);
 }
 
 /**
