@@ -264,6 +264,7 @@ Bon séjour parmi nous ! - Les Scorpions du Désert");
         case 'help':
         case 'sos':
         case 'a':
+        case 'h':
             bot.reply(msg, helpMessage());
             break;
         case 'raccourcis':
@@ -310,7 +311,7 @@ function sortcutsMessage() {
         "`!connexion  ` :  `!connection`, `!connect`, `!login`, `!c`\n" +
         "`!inscription` :  `!signup`, `!go` \n" +
         "`!inviter    ` :  `!invite`, `!invit`, `!invitation`, `!i`\n" +
-        "`!aide       ` :  `!help`, `!sos`, `!a`\n" +
+        "`!aide       ` :  `!help`, `!sos`, `!h`, `!a`\n" +
         "`!raccourcis ` :  `!shortcuts`, `!short`, `!synomynmes`, `!r`\n" +
         ""
         ;
