@@ -158,15 +158,17 @@ function processCommand(command, context, bot, msg) {
             }
             break;
         case 'restart':
-            const guild = discordBot.config.client.guilds.get(config.guild_id);
-            if (guild) {
-                const member = guild.members.get(msg.message.author.id);
-                if (member && member.roles.some(role => { return role.name == 'Admin'; })) {
-                    msg.message.author.send("Redémarrage du Bot").then(() => {
-                        process.exit(1);
-                    });
-                }
-            }
+            msg.guild.fetchMember(msg.user, false)
+                .then(member => {
+                    if (member && member.roles.some(role => { return role.name == 'Admin'; })) {
+                        msg.message.author.send("Redémarrage du Bot").then(() => {
+                            process.exit(1);
+                        });
+                    }
+                })
+                .catch(err => {
+                    bot.reply(msg, err);
+                });
             break;
         case 'inscription':
         case 'signup':
@@ -300,8 +302,8 @@ function helpMessage() {
 !lance nombre       Lance un dé entre 1 et 'nombre'. Ex : dé à 6 faces : !lance 6\n\
 !raccourcis         Alternatives courtes des commandes\n\
       ```";
-      return msg.replace(/!/g, config.prefix);
-    }
+    return msg.replace(/!/g, config.prefix);
+}
 
 /**
  * Return shortcut messages;
