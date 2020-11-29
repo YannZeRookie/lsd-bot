@@ -33,73 +33,64 @@ var lsd_tools = require('./lsd-tools');
 // Seconds(0-59) Minutes(0-59) Hours(0-23) Day_of_Month(1-31) Months(0-11 for Jan-Dec) Day_of_Week(0-6 for Sun-Sat)
 if (!config.noCron) {
     const cron = require("node-cron");
-    cron.schedule('0 45 17 * * *', () => {
-        var guild = discordBot.config.client.guilds.get(config.guild_id);
-        lsd_tools.reviewInvites(db, guild);
+    cron.schedule('0 45 17 * * *', async () => {
+        try {
+            var guild = await discordBot.config.client.guilds.cache.get(config.guild_id);
+            lsd_tools.reviewInvites(db, guild);
+        }
+        catch (e) {
+            console.error('Error in cron: ' + e);
+        }
     });
 }
 
 /**
  * General listening entry point
  */
-discordBot.hears('^' + config.prefix + '.*', 'ambient', (bot, msg) => {
+discordBot.hears('^' + config.prefix + '.*', 'ambient', async (bot, msg) => {
     if (msg.message.author.id == discordConfig.client.user.id) return; // Don't answer to ourselves
     var words = msg.message.content.substring(1).split(' ');
     if (words.length) {
-        processCommand(words[0], 'ambient', bot, msg);
+        await processCommand(words[0], 'ambient', bot, msg);
     }
 });
 
-discordBot.hears('hello', 'ambient', (bot, msg) => {
+discordBot.hears('hello', 'ambient', async (bot, msg) => {
     if (msg.message.author.id == discordConfig.client.user.id) return; // Don't answer to ourselves
-    processCommand('hello', 'ambient', bot, msg);
+    await processCommand('hello', 'ambient', bot, msg);
 });
 
 /**
  * Direct Message = private message sent to the Bot
  */
-discordBot.hears('.*', 'direct_message', (bot, msg) => {
+discordBot.hears('.*', 'direct_message', async (bot, msg) => {
     if (msg.message.author.id == discordConfig.client.user.id) return; // Don't answer to ourselves
     // Remove the prefix, if any (we assume that all input are commands)
     var message = (msg.message.content[0] == config.prefix) ? msg.message.content.substring(1) : msg.message.content;
     var words = message.split(' ');
     if (words.length) {
-        processCommand(words[0], 'direct_message', bot, msg);
+        await processCommand(words[0], 'direct_message', bot, msg);
     }
 });
 
 /**
  * Direct mention = mentioning the Bot during a private message to the Bot
  */
-discordBot.hears('.*', 'direct_mention', (bot, msg) => {
+discordBot.hears('.*', 'direct_mention', async (bot, msg) => {
     if (msg.message.author.id == discordConfig.client.user.id) return; // Don't answer to ourselves
     //bot.reply(msg.message, 'Received a direct_mention from ' + msg.message.author.username);
-    bot.reply(msg, "Salut " + msg.message.author.username + ", si tu as besoin d'aide, tape `" + config.prefix + "aide`");
-    /*
-    bot.send({
-    	text: "You're talking to me?",
-    	to: msg.message.author.id
-    });
-    */
-    //console.log('Was direct_mention by ' + msg.message.author.username);
-    //console.log("\n");
+    await bot.reply(msg, "Salut " + msg.message.author.username + ", si tu as besoin d'aide, tape `" + config.prefix + "aide`");
 });
 
 /**
  * Mention = mentioning the Bot in a general channel
  */
-discordBot.hears('.*', 'mention', (bot, msg) => {
+discordBot.hears('.*', 'mention', async (bot, msg) => {
     if (msg.message.author.id == discordConfig.client.user.id) return; // Don't answer to ourselves
-    bot.reply(msg, msg.message.author.username + " parle de moi, c'est sympa ! Pour avoir de l'aide, tape `" + config.prefix + "aide`");
-    //console.log('Was mentioned by ' + msg.message.author.username);
-    //console.log("\n");
+    await bot.reply(msg, msg.message.author.username + " parle de moi, c'est sympa ! Pour avoir de l'aide, tape `" + config.prefix + "aide`");
 });
 
-discordBot.on('ready', (bot, event) => {
-    bot.log('Ready!');
-});
-
-discordBot.on('disconnect', (bot, event) => {
+discordBot.on('shardDisconnect', (bot, event) => {
     if (db) {
         db.end();
     }
@@ -139,49 +130,53 @@ candidature. Pour en savoir plus sur notre Bot, tape `"+ config.prefix + "aide`\
  * @param {*} bot 
  * @param {*} msg 
  */
-function processCommand(command, context, bot, msg) {
+async function processCommand(command, context, bot, msg) {
     switch (command.toLowerCase()) {
         case 'connexion':
         case 'connection':
         case 'connect':
         case 'login':
         case 'c':
-            var key = lsd_tools.buildConnectionKey(db, msg.message.author);
-            msg.message.author.send("Voici ton lien de connexion : " + buidLoginUrl(key)).then(
-                (newMessage) => {
-                    newMessage.delete(3600 * 1000); // Delete the message after one hour because the key will be expired by then
+            try {
+                console.log('Connection request from ' + msg.message.author.username + ' (' + msg.message.author.id + ')');
+                var key = lsd_tools.buildConnectionKey(db, msg.message.author);
+                newMessage = await msg.message.author.send("Voici ton lien de connexion : " + buidLoginUrl(key));
+                newMessage.delete({ timeout: 3600 * 1000 }); // Delete the message after one hour because the key will be expired by then. Note: we do NOT away for completion here, to avoid waiting for one hour!
+                if (context == 'ambient') {
+                    msg.message.delete({ timeout: 4000 });   // Remove the message to avoid poluting the channel. Here again, no await
                 }
-            );
-            console.log('Connection request from ' + msg.message.author.username + ' (' + msg.message.author.id + ')');
-            if (context == 'ambient') {
-                msg.message.delete(4000);   // Remove the message to avoid poluting the channel
+            }
+            catch (e) {
+                bot.reply(msg, e);
             }
             break;
         case 'restart':
-            msg.guild.fetchMember(msg.user, false)
-                .then(member => {
-                    if (member && member.roles.some(role => { return role.name == 'Admin'; })) {
-                        msg.message.author.send("Redémarrage du Bot").then(() => {
-                            process.exit(1);
-                        });
-                    }
-                })
-                .catch(err => {
-                    bot.reply(msg, err);
-                });
+            try {
+                const member = msg.member;
+                if (member && member.roles.cache.some(role => { return role.name == 'Admin'; })) {
+                    msg.message.author.send("Redémarrage du Bot").then(() => {
+                        process.exit(1);
+                    });
+                }
+            }
+            catch (e) {
+                bot.reply(msg, e);
+            }
             break;
         case 'inscription':
         case 'signup':
         case 'go':
-            var key = lsd_tools.buildConnectionKey(db, msg.message.author);
-            msg.message.author.send("Voici ton lien pour t'inscrire : " + buidLoginUrl(key)).then(
-                (newMessage) => {
-                    newMessage.delete(3600 * 1000); // Delete the message after one hour because the key will be expired by then
+            try {
+                console.log('Inscription request from ' + msg.message.author.username + ' (' + msg.message.author.id + ')');
+                var key = lsd_tools.buildConnectionKey(db, msg.message.author);
+                newMessage = await msg.message.author.send("Voici ton lien pour t'inscrire : " + buidLoginUrl(key));
+                newMessage.delete({ timeout: 3600 * 1000 }); // Delete the message after one hour because the key will be expired by then. Note: we do NOT away for completion here, to avoid waiting for one hour!
+                if (context == 'ambient') {
+                    msg.message.delete({ timeout: 4000 });   // Remove the message to avoid poluting the channel. Here again, no await
                 }
-            );
-            console.log('Inscription request from ' + msg.message.author.username + ' (' + msg.message.author.id + ')');
-            if (context == 'ambient') {
-                msg.message.delete(4000);   // Remove the message to avoid poluting the channel
+            }
+            catch (e) {
+                bot.reply(msg, e);
             }
             break;
         case 'hello':
@@ -196,46 +191,39 @@ function processCommand(command, context, bot, msg) {
         case 'invitation':
         case 'i':
             try {
-                msg.guild.fetchMember(msg.user, false)
-                    .then(cur_member => {
-                        var expiration = 7;     // Default delay is 7 days
-                        var r = msg.message.content.match(/\s+(\d+)\s*$/);
-                        if (r && r[1] && r[1] > 7 && r[1] < 365) {
-                            expiration = r[1]
-                        }
-                        if (!msg.mentions.users || !msg.mentions.users.size) {
-                            bot.reply(msg, "Erreur : vous devez mentionner au moins une personne à inviter");
-                        }
-                        for (var target_user of msg.mentions.users) {
-                            /* msg.mentions.users.forEach(target => { */
-                            msg.guild.fetchMember(target_user[1], false)
-                                .then(target_member => {
-                                    lsd_tools.invite(db, msg.guild, target_member, cur_member, expiration)
-                                        .then(exp => {
-                                            bot.reply(msg, "Invitation réussie de " + (target_member.nickname ? target_member.nickname : target_member.displayName));
-                                            // Send a private message to the invited user, with explanations
-                                            target_member.send("Félicitations, tu as désormais le statut d'Invité sur le serveur des Scorpions du Désert ! \
+                const cur_member = await msg.guild.members.fetch(msg.user);
+                if (!cur_member) {
+                    throw "Erreur : vous êtes inconnu du serveur";
+                }
+                var expiration = 7;     // Default delay is 7 days
+                var r = msg.message.content.match(/\s+(\d+)\s*$/);
+                if (r && r[1] && r[1] > 7 && r[1] < 365) {
+                    expiration = r[1]
+                }
+                if (!msg.mentions.users || !msg.mentions.users.size) {
+                    throw "Erreur : personne n'a été mentionné";
+                }
+                if (!msg.mentions.members || !msg.mentions.members.size) {
+                    throw "Erreur : les personnes mentionnées sont inconnues du serveur";
+                }
+                msg.mentions.members.forEach(async target_member => {
+                    try {
+                        const exp = await lsd_tools.invite(db, msg.guild, target_member, cur_member, expiration);
+                        bot.reply(msg, "Invitation réussie de " + (target_member.nickname ? target_member.nickname : target_member.displayName) + ` pour ${exp} jours`);
+                        // Send a private message to the invited user, with explanations
+                        target_member.send("Félicitations, tu as désormais le statut d'Invité sur le serveur des Scorpions du Désert ! \
 Ceci te permet de circuler et de communiquer sur tous les canaux ouverts aux invités de notre serveur Discord.\n\
 Attention, tu redeviendras automatiquement simple visiteur au bout de " + exp + " jours, après quoi \
 il faudra qu'un Scorpion t'invite de nouveau.\n\
 Nous espérons que ton passage chez nous te plaîra et, qui saît ?, te décidera à nous rejoindre.\n\
 Bon séjour parmi nous ! - Les Scorpions du Désert");
-                                        })
-                                        .catch(err => {
-                                            bot.reply(msg, err);
-                                        });
-                                })
-                                .catch(err => {
-                                    bot.reply(msg, err);
-                                });
-                        }; //for
-                    })
-                    .catch(err => {
-                        bot.reply(msg, err);
-                    });
+                    } catch (e) {
+                        bot.reply(msg, e);
+                    }
+                });
             }
             catch (e) {
-                console.error(e);
+                bot.reply(msg, e);
             }
             break;
         case 'uninvite':
@@ -243,24 +231,31 @@ Bon séjour parmi nous ! - Les Scorpions du Désert");
             /* test message for YannZeGrunt : 
             *  §uninvite <@!404722937183076354>
             */
+            try {
+                if (!msg.mentions.users || !msg.mentions.users.size) {
+                    throw "Erreur : personne n'a été mentionné";
+                }
+                if (!msg.mentions.members || !msg.mentions.members.size) {
+                    throw "Erreur : les personnes mentionnées sont inconnues du serveur";
+                }
+                msg.mentions.members.forEach(async target_member => {
+                    try {
 
-            if (!msg.mentions.users || !msg.mentions.users.size) {
-                bot.reply(msg, "Erreur : vous devez mentionner au moins une personne à dé-inviter");
-            }
-            const invite_role = msg.guild.roles.find(role => role.name === 'Invité');
-            for (var target_user of msg.mentions.users) {
-                msg.guild.fetchMember(target_user[1], false)
-                    .then(target_member => {
                         lsd_tools.degrade_invite(db, msg.guild, {
                             discord_id: target_member.id,
-                            discord_username: target_member.displayName,
-                            by_discord_id: msg.user.id
-                        }, invite_role);
-                    })
-                    .catch(err => {
-                        bot.reply(msg, err);
-                    });
-            }//for
+                            discord_username: (target_member.nickname ?? target_member.displayName),
+                            by_discord_id: msg.user.id,
+                            by_discord_username: (msg.member.nickname ?? msg.member.displayName)
+                        });
+                    }
+                    catch (e) {
+                        bot.reply(msg, e);
+                    }
+                });
+            }
+            catch (e) {
+                bot.reply(msg, e);
+            }
             break;
         case 'aide':
         case 'help':

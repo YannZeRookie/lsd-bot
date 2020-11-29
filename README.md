@@ -19,11 +19,14 @@ Libraries
   * Good article about async/await in discord.js: https://github.com/AnIdiotsGuide/discordjs-bot-guide/blob/master/other-guides/async-await.md
   * Good article about async/await in JS: https://yashints.dev/blog/2019/08/17/js-async-await
 * Looking at NPM packages: https://www.npmjs.com/
+* NPM Link (to work on local dependencies): https://medium.com/dailyjs/how-to-use-npm-link-7375b6219557
 
 * Discord Botkit adaptation: https://github.com/brh55/botkit-discord
 * Botkit:
   * Website: https://botkit.ai/
   * Doc: https://botkit.ai/getstarted.html
+  * Reference 0.7: https://botkit.ai/docs/v0/
+  * Reference 4+: https://botkit.ai/docs/v4/
   * NPM: https://www.npmjs.com/package/botkit
   * GitHub: https://github.com/howdyai/botkit
 * Mysql JS lib: https://github.com/mysqljs/mysql

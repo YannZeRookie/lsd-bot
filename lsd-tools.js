@@ -56,14 +56,14 @@ async function getSections(db) {
 async function invite(db, guild, target_member, cur_user, expiration) {
     try {
         // Get the Roles of the current user. If not Scorpion -> fail
-        if (!cur_user.roles.some(role => role.name === 'Scorpion')) {
+        if (!cur_user.roles.cache.some(role => role.name === 'Scorpion')) {
             throw "Erreur : Il faut être Scorpion pour pouvoir inviter quelqu'un";
         }
         if (!target_member) {
             throw "Erreur : cet utilisateur n'est pas connu du serveur";
         }
         // Get the Roles of the target user. If other than @everyone -> fail
-        if (target_member.highestRole.name != '@everyone') {
+        if (target_member.roles.highest.name != '@everyone') {
             throw "Erreur : cet utilisateur est déjà au moins de niveau Invité";
         }
         // Check for any inconsistencies with the database if the target user is already in there
@@ -75,7 +75,7 @@ async function invite(db, guild, target_member, cur_user, expiration) {
         }
 
         // Force expiration to 7 days if current user Role is not at least Officier
-        if (!cur_user.roles.some(role => {
+        if (!cur_user.roles.cache.some(role => {
             return role.name == 'Officier' || role.name == 'Conseiller' || role.name == 'Admin';
         })) {
             expiration = 7;
@@ -104,18 +104,14 @@ async function invite(db, guild, target_member, cur_user, expiration) {
                 expiration: expiration,
                 user_id: target_user_id,
                 discord_id: target_member.id,
-                discord_username: (target_member.nickname ? target_member.nickname : target_member.displayName),
+                discord_username: (target_member.nickname ?? target_member.displayName),
                 by_discord_id: cur_user.id,
-                by_discord_username: (cur_user.nickname ? cur_user.nickname : cur_user.displayName)
+                by_discord_username: (cur_user.nickname ?? cur_user.displayName)
             }
         );
 
-        // Set target user's role to Invite
-        const invite_role = guild.roles.find(role => role.name === 'Invité');
-        if (!invite_role) {
-            throw "Erreur : impossible de trouver le rôle Invité. Contactez un Admin.";
-        }
-        await target_member.addRoles([invite_role]);  // See https://github.com/discordjs/discord.js/issues/3575
+        // Set target user's role to Invité (role id=404693131573985280)
+        await target_member.roles.add('404693131573985280');
     }
     catch (e) {
         console.error(e);
@@ -127,20 +123,24 @@ async function invite(db, guild, target_member, cur_user, expiration) {
 }
 
 /**
+ * Un-invite a user
  * 
  * @param {*} db Database
  * @param {*} guild Guild
  * @param {*} invitation from the lsd_invitations table
  */
-async function degrade_invite(db, guild, invitation, invite_role) {
+async function degrade_invite(db, guild, invitation) {
     try {
         if (guild == null) return;
         try {
-            const target_member = await guild.fetchMember(invitation.discord_id, false);
-            var is_invite = target_member.roles.some(role => { return role.name == 'Invité'; });
+            const target_member = await guild.members.fetch(invitation.discord_id);
+            if (!target_member) {
+                throw "Not a member anymore";
+            }
+            var is_invite = target_member.roles.cache.some(role => { return role.name == 'Invité'; });
             if (is_invite) {
                 // Change Role
-                await target_member.removeRoles([invite_role]);
+                await target_member.roles.remove('404693131573985280'); // Role ID = '404693131573985280'
                 // Send PM to target
                 var message = "Bonjour, c'est le Bot du serveur Discord des Scorpions du Désert !\n" +
                     "Je t'ai automatiquement repassé(e) en simple Visiteur. J'espère que ton passage sur notre serveur s'est bien passé.\n" +
@@ -154,7 +154,7 @@ async function degrade_invite(db, guild, invitation, invite_role) {
                 await target_member.send(message);
                 // PM to the user who created the invitations
                 if (invitation.by_discord_id) {
-                    var by_member = await guild.fetchMember(invitation.by_discord_id, false);
+                    var by_member = await guild.members.fetch(invitation.by_discord_id);
                     if (by_member) {
                         await by_member.send(`Ton invité(e) **${invitation.discord_username}** a été rétrogradé en simple Visiteur.` + "\n" +
                             "Un message lui a été envoyé pour lui expliquer quoi faire pour se faire ré-inviter ou pour s'inscrire pour de bon."
@@ -200,11 +200,11 @@ async function degrade_invite(db, guild, invitation, invite_role) {
  */
 async function reviewInvites(db, guild) {
     try {
-        const invite_role = guild ? guild.roles.find(role => role.name === 'Invité') : null;
+        const invite_role = guild ? guild.roles.cache.find(role => role.name === 'Invité') : null;
         //-- Find timed-out invitations
         const found_res = await db.query("SELECT * FROM lsd_invitations WHERE created_on + expiration*24*3600 < unix_timestamp()");
         for (const invitation of found_res[0]) {
-            await degrade_invite(db, guild, invitation, invite_role);
+            await degrade_invite(db, guild, invitation);
         }
 
         //-- Shoot down a few invites who do not have any invitations
@@ -223,8 +223,8 @@ async function reviewInvites(db, guild) {
         for (const member of loners) {
             await degrade_invite(db, guild, {
                 discord_id: member.id,
-                discord_username: member.displayName
-            }, invite_role);
+                discord_username: (member.nickname ?? member.displayName)
+            });
         }
     }
     catch (e) {

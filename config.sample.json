@@ -2,5 +2,6 @@
    "prefix": "!",
    "connection_url": "Put the login url of the LSD account website",
    "guild_id": "Your Discord server ID",
-   "channel_review": "The channel ID where you want to send messages to the server managers"
+   "channel_review": "The channel ID where you want to send messages to the server managers",
+   "noCron": true
 }
