@@ -236,39 +236,34 @@ async function reviewInvites(db, guild) {
  * @param {*} db Database
  * @param {*} section section_tag string
  * @param {*} eventdate datetime
- * @param {*} author_id discord id of the person createing the event
- * @param {*} author_tag discord tag (name and unique discriminator) of the person createing the event
+ * @param {*} author_id discord id of the person creating the event
+ * @param {*} author_tag discord tag (name and unique discriminator) of the person creating the event
  * @param {*} description text describing the event
  */
 async function event_create(db, section, eventdate, author_id, author_tag, description) {
     try {
         let nowdate = Date.now();
-        if (nowdate > eventdate ) {return "Erreur : Vous ne pouvez pas créer un event pour une date passée.";}
+        if (nowdate > eventdate) { return "Erreur : vous ne pouvez pas créer un event pour une date passée."; }
         //getting list of acceptable sections and roles
         let section_tags = [];
-        const sections_data = await db.query("SELECT * FROM lsd_section");
-        sections_data[0].forEach( elem => section_tags.push(elem.tag));
+        const sections_data = await db.query("SELECT * FROM lsd_section WHERE archived=0");
+        sections_data[0].forEach(elem => section_tags.push(elem.tag));
         //if sections and roles are acceptable, create the event
         if (section_tags.includes(section)) {
-            //console.log([0,section, sqldate, author_id, author_tag, rank, description]);
             result = await db.query('INSERT INTO lsd_events SET event_id=?,section_tag=?,date_time=?,author_discord_id=?,author_discord_tag=?,description=? ',
-            [0, section, eventdate, author_id, author_tag, description], function(err) {
-            if (err) { throw err; }
-            });
-            return ':white_check_mark: **Event succesfully created.** \n Type \' !event info '+result[0].insertId+' \' to display information about this new event.';
+                [0, section, eventdate, author_id, author_tag, description], function (err) {
+                    if (err) { throw err; }
+                });
+            return ':white_check_mark: **Event créé avec succès.** \n Tapez \' !event info ' + result[0].insertId + ' \' pour les informations sur cet event.';
         }
         // otherwise reply with an error
         else {
-            let errorstring = "Erreur: "
+            let errorstring = "Erreur : "
             if (!section_tags.includes(section)) {
-                 errorstring += "section inconnue. Les tags de section sont: "
-                 section_tags.forEach( elem => errorstring += elem+' ');
+                errorstring += "section inconnue. Les tags de section sont : ";
+                errorstring += section_tags.join(', ');
             }
-            if (!role_tags.includes(rank)) {
-                errorstring += "grade inconnu. Les tags de grade sont: "
-                role_tags.forEach( elem => errorstring += elem+' ');
-            }
-            return errorstring; 
+            return errorstring;
         }
     }
     catch (e) {
@@ -284,21 +279,19 @@ async function event_create(db, section, eventdate, author_id, author_tag, descr
  */
 async function event_info(db, id) {
     try {
-        const resu = await db.query("SELECT * FROM lsd_events WHERE event_id=? ", id, function(err, result) {
+        const resu = await db.query("SELECT * FROM lsd_events WHERE event_id=? ", id, function (err, result) {
             if (err) { throw err; }
-            });
-        if (resu[0].length === 0 ) {return "Erreur : impossible de trouver l'event "+id;}
+        });
+        if (resu[0].length === 0) { return "Erreur : impossible de trouver l'event #" + id; }
         const edate = resu[0][0].date_time
-        const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', hour:'numeric', minute:'numeric' };
+        const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', hour: 'numeric', minute: 'numeric' };
         const eventdate = edate.toLocaleDateString('fr-FR', options);
-        let inscrits = resu[0][0].participants;
-        if (typeof inscrits !== 'undefined' && inscrits) {}
-        else {inscrits = "";}
+        let inscrits = resu[0][0].participants ?? "";
         let author_tag = resu[0][0].author_discord_tag;
         let count = (inscrits.match(/¸/g) || []).length;
-        let resultstring = "**event #"+id+":**\nsection "+resu[0][0].section_tag+"\n:calendar_spiral: "+eventdate+"\ncréé par "+author_tag+"\n---------------------\n";
-        resultstring += resu[0][0].description+"\n---------------------\n :scorpion: "+count+" inscrits : "+inscrits;
-        resultstring += "\nRépondez \' !e s "+id+" \' pour vous inscrire.";
+        let resultstring = "**Event #" + id + " :**\nSection " + resu[0][0].section_tag + "\n:calendar_spiral: " + eventdate + "\nCréé par " + author_tag + "\n---------------------\n";
+        resultstring += resu[0][0].description + "\n---------------------\n :scorpion: " + count + " inscrits : " + inscrits;
+        resultstring += "\nRépondez \' !e s " + id + " \' pour vous inscrire.";
         return resultstring;
     }
     catch (e) {
@@ -314,21 +307,20 @@ async function event_info(db, id) {
  */
 async function event_sign_in(db, id, author_tag) {
     try {
-        const resu = await db.query("SELECT * FROM lsd_events WHERE event_id=? ", id, function(err, result) {
+        const resu = await db.query("SELECT * FROM lsd_events WHERE event_id=? ", id, function (err, result) {
             if (err) { throw err; }
-            });
-        if (resu[0].length === 0 ) {return "Erreur : impossible de trouver l'event "+id;}
+        });
+        if (resu[0].length === 0) { return "Erreur : impossible de trouver l'event #" + id; }
         let nowdate = Date.now();
-        if (nowdate > resu[0][0].date_time) {return "Erreur : L'event "+id+" est passé, vous ne pouvez plus vous inscrire.";}
-        let inscrits = resu[0][0].participants;
-        if (typeof inscrits === 'undefined' || !inscrits) { inscrits = "" }
-        if (inscrits.includes(author_tag)) {return author_tag+" est déjà inscrit(e) à l'event "+id+".";}
+        if (nowdate > resu[0][0].date_time) { return "Erreur : L'event #" + id + " est passé, vous ne pouvez plus vous inscrire."; }
+        let inscrits = resu[0][0].participants ?? "";
+        if (inscrits.includes(author_tag)) { return author_tag + " est déjà inscrit(e) à l'event #" + id + "."; }
         else {
-            inscrits += author_tag+" ¸ ";
-            const resu = await db.query("UPDATE lsd_events SET participants=? WHERE event_id = ?", [inscrits, id], function(err) {
+            inscrits += author_tag + " ¸ ";
+            const resu = await db.query("UPDATE lsd_events SET participants=? WHERE event_id = ?", [inscrits, id], function (err) {
                 if (err) { throw err; }
-                });
-            return ":white_check_mark: "+author_tag+" est maintenant inscrit(e) à l'event "+id+".";
+            });
+            return ":white_check_mark: " + author_tag + " est maintenant inscrit(e) à l'event #" + id + ".";
         }
     }
     catch (e) {
@@ -344,23 +336,22 @@ async function event_sign_in(db, id, author_tag) {
  */
 async function event_sign_out(db, id, author_tag) {
     try {
-        const resu = await db.query("SELECT * FROM lsd_events WHERE event_id=? ", id, function(err, result) {
+        const resu = await db.query("SELECT * FROM lsd_events WHERE event_id=? ", id, function (err, result) {
             if (err) { throw err; }
-            });
-        if (resu[0].length === 0 ) {return "Erreur : impossible de trouver l'event "+id;}
+        });
+        if (resu[0].length === 0) { return "Erreur : impossible de trouver l'event #" + id; }
         let nowdate = Date.now();
-        if (nowdate > resu[0][0].date_time) {return "Erreur : L'event "+id+" est passé, vous ne pouvez plus vous désinscrire.";}
-        let inscrits = resu[0][0].participants;
-        if (typeof inscrits === 'undefined' || !inscrits) { inscrits = "" }
+        if (nowdate > resu[0][0].date_time) { return "Erreur : L'event #" + id + " est passé, vous ne pouvez plus vous désinscrire."; }
+        let inscrits = resu[0][0].participants ?? "";
         if (inscrits.includes(author_tag)) {
-            inscrits = inscrits.replace(author_tag+" ¸ ", "");
-            const resu = await db.query("UPDATE lsd_events SET participants=? WHERE event_id = ?", [inscrits, id], function(err, result) {
+            inscrits = inscrits.replace(author_tag + " ¸ ", "");
+            const resu = await db.query("UPDATE lsd_events SET participants=? WHERE event_id = ?", [inscrits, id], function (err, result) {
                 if (err) { throw err; }
-                });
-            return ":red_circle: "+author_tag+" n'est plus inscrit(e) à l'event "+id+".";
-            }
-        else { 
-            return author_tag+" n'est pas inscrit(e) à l'event "+id+"."; 
+            });
+            return ":red_circle: " + author_tag + " n'est plus inscrit(e) à l'event #" + id + ".";
+        }
+        else {
+            return author_tag + " n'est pas inscrit(e) à l'event #" + id + ".";
         }
     }
     catch (e) {
@@ -377,17 +368,17 @@ async function event_sign_out(db, id, author_tag) {
  */
 async function event_delete(db, id, highest_rank, author_tag) {
     try {
-        const resu = await db.query("SELECT * FROM lsd_events WHERE event_id=? ", id, function(err, result) {
+        const resu = await db.query("SELECT * FROM lsd_events WHERE event_id=? ", id, function (err, result) {
             if (err) { throw err; }
-            });
+        });
         let event_author_tag = resu[0][0].author_discord_tag;
-        if (highest_rank === "Officier"|| highest_rank === "Conseiller"|| highest_rank === "Admin" || event_author_tag === author_tag) {
-            const resu = await db.query("DELETE FROM lsd_events WHERE event_id=?; ", id, function(err, result) {
+        if (highest_rank === "Officier" || highest_rank === "Conseiller" || highest_rank === "Admin" || event_author_tag === author_tag) {
+            const resu = await db.query("DELETE FROM lsd_events WHERE event_id=?; ", id, function (err, result) {
                 if (err) { throw err; }
-                });
-            return "event "+id+" has been deleted.";
+            });
+            return "L'event #" + id + " a été supprimé.";
         }
-        else { return 'Erreur: Il faut être officier, ou être le créateur de l\'event pour le supprimer.';}
+        else { return 'Erreur : Il faut être Officier, ou être le créateur de l\'event pour le supprimer.'; }
     }
     catch (e) {
         console.error(e);
@@ -401,26 +392,15 @@ async function event_delete(db, id, highest_rank, author_tag) {
  */
 async function event_list(db, option) {
     try {
-        if (option === 'all') {
-            const events_data = await db.query("SELECT * FROM lsd_events");
-            var resultstring = 'Voici la liste de tous les events:\n';
-            const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', hour:'numeric', minute:'numeric' };
-            events_data[0].forEach( function(elem){ 
-                var edate = elem.date_time.toLocaleDateString('fr-FR', options);
-                resultstring += "**Event "+elem.event_id+":** section "+elem.section_tag+", "+edate+", créé par "+elem.author_discord_tag+"\n";
-            });
-            return resultstring;
-        }
-        else {
-            const events_data = await db.query("SELECT * FROM lsd_events where date_time between NOW() and '2099-01-01'");
-            var resultstring = 'Voici la liste de tous les events:\n';
-            const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', hour:'numeric', minute:'numeric' };
-            events_data[0].forEach( function(elem){ 
-                var edate = elem.date_time.toLocaleDateString('fr-FR', options);
-                 resultstring += "**Event "+elem.event_id+":** section "+elem.section_tag+", "+edate+", créé par "+elem.author_discord_tag+"\n"
-                                });
-            return resultstring;
-        }
+        const filter = (option === 'all') ? "1" : "date_time > NOW()";
+        const events_data = await db.query("SELECT * FROM lsd_events WHERE " + filter + " ORDER BY date_time");
+        var resultstring = 'Voici la liste de tous les events :\n';
+        const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', hour: 'numeric', minute: 'numeric' };
+        events_data[0].forEach(function (elem) {
+            var edate = elem.date_time.toLocaleDateString('fr-FR', options);
+            resultstring += "**Event #" + elem.event_id + " :** section " + elem.section_tag + ", " + edate + ", créé par " + elem.author_discord_tag + "\n";
+        });
+        return resultstring;
     }
     catch (e) {
         console.error(e);

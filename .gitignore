@@ -8,3 +8,4 @@ notes.md
 .vscode
 restart.ts
 ecosystem.config.js
+lsdtestdb/
