@@ -170,6 +170,10 @@ function processCommand(command, context, bot, msg) {
                     bot.reply(msg, err);
                 });
             break;
+        case 'event':
+        case 'e':
+            event_msg(bot, msg);
+            break;
         case 'inscription':
         case 'signup':
         case 'go':
@@ -201,7 +205,7 @@ function processCommand(command, context, bot, msg) {
                         var expiration = 7;     // Default delay is 7 days
                         var r = msg.message.content.match(/\s+(\d+)\s*$/);
                         if (r && r[1] && r[1] > 7 && r[1] < 365) {
-                            expiration = r[1]
+                            expiration = r[1];
                         }
                         if (!msg.mentions.users || !msg.mentions.users.size) {
                             bot.reply(msg, "Erreur : vous devez mentionner au moins une personne à inviter");
@@ -339,3 +343,149 @@ function lance(bot, msg) {
         bot.reply(msg.message, "Désolé, je n'ai pas compris. Il me faut un nombre ≥ 2 après la commande");
     }
 }
+
+
+/**
+ * Event manager through the bot and a mysql table
+ * @param {*} bot 
+ * @param {*} msg 
+ */
+async function event_msg(bot, msg) {
+    const msglines = msg.message.content.split('\n');
+    const arguments = msglines[0].trim().split(/ +/g);
+    const guild = discordBot.config.client.guilds.get(config.guild_id);
+    let highest_rank;
+    highest_rank = await guild.fetchMember(msg.message.author, false).then(member => { return member.highestRole.name; });
+    if (highest_rank !== '@everyone') {
+        if (!arguments[1]) {
+            // if no argument was given, give help to the user to explain how things work
+            bot.reply(msg, "Erreur: commande incomplète. Quelques exemples de gestion d'events:\n\
+            ```\n\
+            **Créer un event pour la section JDM ** : !event create JDM 2021/03/24 20:45 (puis ajoutez dans les lignes suivantes de votre message les détails de l'event)\n\
+            **Voir une liste des events à venir** : !event list\n\
+            **Voir une liste de tous les events** : !event listall\n\
+            **Visualiser l'event ayant le numero d'ID 15** : !event info 15\n\
+            **S'inscrire à l'event #15** : !event signin 15\n\
+            **Se désinscrire de l'event #15** : !event signout 15\n\
+            **Supprimer l'event #15 (vous devez être officier)** : !event delete 15\n\
+            Raccourcis : 'create'='c', 'list'='l' , 'listall'='la', 'info'='i', 'signin'='s'='+1', 'signout'='so'='-1', 'delete'='d'```" );
+        } else {
+            switch (arguments[1].toLowerCase()) {
+                //if the first argument is 'create', it will create a new event, according to the other arguments given
+                case 'create':
+                case 'c':
+                    if (highest_rank === "Scorpion" || highest_rank === "Star Citizen" || highest_rank === "Dual-Universe" || highest_rank === "Officier"|| highest_rank === "Conseiller"|| highest_rank === "Admin") {
+                        if ( !arguments[2] || !arguments[3] || !arguments[4] || msglines.length < 2 ) {
+                            bot.reply(msg, 'Erreur: paramètres invalides ou description de l\'event manquante.\n\
+Pour créer un event, indiquez sur la première ligne \'!event create\', suivit d\'une section(JDM, DU, etc...), d\'une date (AAAA/MM/JJ), d\'une heure (HH:MM)\
+, finalement ajoutez le reste des informations concernant l\'event dans les lignes suivantes');
+                        } 
+                        else {
+                            let eventdate = new Date(arguments[3]+' '+arguments[4]);
+                            if (eventdate.toDateString() === "Invalid Date") { 
+                                bot.reply('Erreur: date/heure incomprehensible : '+arguments[3]+' '+arguments[3]+' . Le format attendu est : AAAA/MM/JJ HH:MM');
+                            }
+                            else { 
+                                msglines.splice(0,1);
+                                let description = msglines.join('\n');
+                                //event create function arguments: (database, section, datetime, author.discord_id, author.discord_tag, description-de-levent)
+                                const dbanswer = await lsd_tools.event_create(db, arguments[2], eventdate, msg.message.author.id, msg.message.author.tag,description); 
+                                bot.reply(msg, dbanswer);
+                            }
+                        }
+                    }
+                    else {
+                        bot.reply(msg, 'Erreur: Il faut être Scorpions pour créer un event.');
+                    }
+                    break;
+
+                //if the first argument is 'delete', it will delete an existing event that must be given in the second argument
+                case 'delete':
+                case 'd':
+                    if ( !arguments[2] ) { bot.reply(msg, 'Erreur: Veuillez indiquer un numéro d\'identifiant d\'event.'); } 
+                    else { 
+                        ///TBD seul un officier puet supprimer un event
+                        //var guild = discordBot.config.client.guilds.get(config.guild_id);
+                        //var member;
+                        //if (typeof msg.message.member !== 'undefined' && msg.message.member) {member = msg.message.member;}
+                        //else { member = guild.members.get(msg.message.author.id);console.log("m.m.m dicarded",member); }
+                        //if ( member.roles.find(r => r.name === "Officier") ) { 
+                        const danswer = await lsd_tools.event_delete(db, arguments[2], highest_rank, msg.message.author.tag);// deletion of the event
+                        bot.reply(msg, danswer);
+                        //} 
+                        //else { bot.reply(msg, 'Error. Vous n\'avez pas l\'authorisation de supprimer cet event.'); }
+                    }
+                    break;
+
+                //if the first argument is 'info', it will display information about the event given in second argument
+                case 'info':
+                case 'i':
+                    if ( !arguments[2] ) {
+                        bot.reply(msg, 'Erreur: Veuillez indiquer un numéro d\'identifiant d\'event.');
+                    } 
+                    else { 
+                        const ianswer = await lsd_tools.event_info(db, arguments[2]);
+                        bot.reply(msg, ianswer);
+                    }
+                    break;
+
+                //if the first argument is 'signup', it will add a discord member to the participants list. The event must be given in second argument
+                case 'signin':
+                case 's':
+                case '+1':
+                    if ( !arguments[2] ) {
+                        bot.reply(msg, 'Erreur: Veuillez indiquer un numéro d\'identifiant d\'event pour vous y inscrire.');
+                    } 
+                    else { 
+                        //TBD verifier que l'autheur est invité ou scorpion
+                        const sanswer = await lsd_tools.event_sign_in(db, arguments[2], msg.message.author.tag);
+                        bot.reply(msg, sanswer);
+                    }
+                    break;
+
+                //if the first argument is 'signout', it will remove a discord member to the participants list. The event must be given in second argument
+                case 'signout':
+                case 'so':
+                case '-1':
+                    if ( !arguments[2] ) {
+                        bot.reply(msg, 'Erreur: Veuillez indiquer un numéro d\'identifiant d\'event pour vous y désinscrire.');
+                    } 
+                    else { 
+                        const sanswer = await lsd_tools.event_sign_out(db, arguments[2], msg.message.author.tag);
+                        bot.reply(msg, sanswer);
+                    }
+                    break;
+
+                //if the first argument is 'listall', it will display a list a future and past events
+                case 'listall':
+                case 'la':
+                    //  TBD : do something here
+                    const laanswer = await lsd_tools.event_list(db, 'all');
+                    bot.reply(msg, laanswer);
+                    break;
+
+                //if the first argument is 'list', it will display a list a future events
+                case 'list':
+                case 'l':
+                    const lanswer = await lsd_tools.event_list(db, 'future-only');
+                    bot.reply(msg, lanswer);
+                    break;
+
+                default:
+                    // first argument cannot be recognised
+                    bot.reply(msg, "Erreur: option non reconnue. Quelques exemples :\n\
+                    ```\n\
+                    **Créer un event pour la section JDM ** : !event create JDM 2021/03/24 20:45 (puis ajoutez dans les lignes suivantes de votre message les détails de l'event)\n\
+                    **Voir une liste des events à venir** : !event list\n\
+                    **Voir une liste de tous les events** : !event listall\n\
+                    **Visualiser l'event ayant le numero d'ID 15** : !event info 15\n\
+                    **S'inscrire à l'event #15** : !event signin 15\n\
+                    **Se désinscrire de l'event #15** : !event signout 15\n\
+                    **Supprimer l'event #15 (vous devez être officier)** : !event delete 15\n\
+                    Raccourcis : 'create'='c', 'list'='l' , 'listall'='la', 'info'='i', 'signin'='s'='+1', 'signout'='so'='-1', 'delete'='d'```" );
+            }
+        }
+    }
+    else {  bot.reply(msg, "Erreur: Vous devez être au moins invité pour utiliser cette commande.");}
+}
+
