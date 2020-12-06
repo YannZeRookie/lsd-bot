@@ -152,9 +152,9 @@ async function processCommand(command, context, bot, msg) {
             break;
         case 'restart':
             try {
-                const member = msg.member;
+                const member = await getMessageMember(msg);
                 if (member && member.roles.cache.some(role => { return role.name == 'Admin'; })) {
-                    msg.message.author.send("Redémarrage du Bot").then(() => {
+                    member.send("Redémarrage du Bot").then(() => {
                         process.exit(1);
                     });
                 }
@@ -201,7 +201,7 @@ async function processCommand(command, context, bot, msg) {
         case 'invitation':
         case 'i':
             try {
-                const cur_member = msg.member;
+                const cur_member = await getMessageMember(msg);
                 if (!cur_member) {
                     throw "Erreur : vous êtes inconnu du serveur";
                 }
@@ -242,6 +242,7 @@ Bon séjour parmi nous ! - Les Scorpions du Désert");
             *  §uninvite <@!404722937183076354>
             */
             try {
+                const cur_member = await getMessageMember(msg);
                 if (!msg.mentions.users || !msg.mentions.users.size) {
                     throw "Erreur : personne n'a été mentionné";
                 }
@@ -255,7 +256,7 @@ Bon séjour parmi nous ! - Les Scorpions du Désert");
                             discord_id: target_member.id,
                             discord_username: (target_member.nickname ?? target_member.displayName),
                             by_discord_id: msg.user.id,
-                            by_discord_username: (msg.member.nickname ?? msg.member.displayName)
+                            by_discord_username: (cur_member.nickname ?? cur_member.displayName)
                         });
                     }
                     catch (e) {
@@ -349,6 +350,28 @@ function lance(bot, msg) {
 
 
 /**
+ * Get the member of a message, even if the message was sent as a PM
+ * @param {Message} msg
+ * @returns {GuildMember}
+ */
+async function getMessageMember(msg) {
+    var member = null;
+    try {
+        if (msg.member) {
+            member = msg.member;
+        } else {
+            // Find it in the Guild
+            const guild = await discordBot.config.client.guilds.cache.get(config.guild_id);
+            member = await guild.members.fetch(msg.user);
+        }
+    }
+    catch (e) {
+        console.error(e);
+    }
+    return member;
+}
+
+/**
  * Event manager through the bot and a mysql table
  * @param {*} bot 
  * @param {*} msg 
@@ -356,7 +379,8 @@ function lance(bot, msg) {
 async function event_msg(bot, msg) {
     const msglines = msg.message.content.split('\n');
     const arguments = msglines[0].trim().split(/ +/g);
-    const highest_rank = msg.member.roles.highest;
+    const member = await getMessageMember(msg);
+    const highest_rank = member.roles.highest;
     if (highest_rank !== '@everyone') {
         if (!arguments[1]) {
             // if no argument was given, give help to the user to explain how things work
@@ -375,7 +399,7 @@ async function event_msg(bot, msg) {
                 //if the first argument is 'create', it will create a new event, according to the other arguments given
                 case 'create':
                 case 'c':
-                    if (msg.member.roles.cache.some(role => role.name === 'Scorpion')) {    // Only Scorpions can create an Event
+                    if (member.roles.cache.some(role => role.name === 'Scorpion')) {    // Only Scorpions can create an Event
                         if (!arguments[2] || !arguments[3] || !arguments[4] || msglines.length < 2) {
                             bot.reply(msg, 'Erreur : paramètres invalides ou description de l\'event manquante.\n\
 Pour créer un event, indiquez sur la première ligne \'!event create\', suivit d\'une section(JDM, DU, etc...), d\'une date (AAAA/MM/JJ), d\'une heure (HH:MM)\

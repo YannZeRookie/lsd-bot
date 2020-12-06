@@ -9,3 +9,4 @@ notes.md
 restart.ts
 ecosystem.config.js
 lsdtestdb/
+yarn.lock
