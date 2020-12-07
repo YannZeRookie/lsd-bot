@@ -387,9 +387,10 @@ async function event_msg(bot, msg) {
             bot.reply(msg, "Erreur : commande incomplète. Quelques exemples de gestion d'events :\n\
             ```\n\
             **Créer un event pour la section JDM ** : !event create JDM 2021/03/24 20:45 (puis ajoutez dans les lignes suivantes de votre message les détails de l'event)\n\
+            **Modifier la description de l'event #15 ** : !event modify 15 (puis ajoutez dans les lignes suivantes de votre message les détails de l'event)\n\
             **Voir une liste des events à venir** : !event list\n\
             **Voir une liste de tous les events** : !event listall\n\
-            **Visualiser l'event ayant le numero d'ID 15** : !event info 15\n\
+            **Visualiser l'event #15** : !event info 15\n\
             **S'inscrire à l'event #15** : !event signin 15\n\
             **Se désinscrire de l'event #15** : !event signout 15\n\
             **Supprimer l'event #15 (vous devez être officier)** : !event delete 15\n\
@@ -433,19 +434,31 @@ Pour créer un event, indiquez sur la première ligne \'!event create\', suivit 
                         bot.reply(msg, danswer);
                     }
                     break;
-
                 //if the first argument is 'info', it will display information about the event given in second argument
                 case 'info':
-                case 'i':
-                    if (!arguments[2]) {
-                        bot.reply(msg, 'Erreur : veuillez indiquer un numéro d\'identifiant d\'event.');
-                    }
+                    case 'i':
+                        if (!arguments[2]) {
+                            bot.reply(msg, 'Erreur : veuillez indiquer un numéro d\'identifiant d\'event.');
+                        }
+                        else {
+                            const ianswer = await lsd_tools.event_info(db, arguments[2]);
+                            bot.reply(msg, ianswer);
+                        }
+                        break;
+                // if the first argument is 'modify', il will check for an event id, and modify the description of the 
+                case 'modify':
+                case 'modifier':
+                case 'modif':
+                case 'm':
+                    if (!arguments[2]) { bot.reply(msg, 'Erreur : veuillez indiquer un numéro d\'identifiant d\'event.'); }
                     else {
-                        const ianswer = await lsd_tools.event_info(db, arguments[2]);
+                        msglines.splice(0, 1);
+                        let description = msglines.join('\n');
+                        //event modify : changer la description d'un event
+                        const ianswer = await lsd_tools.event_modify(db, arguments[2], msg.message.author.tag, description);
                         bot.reply(msg, ianswer);
                     }
                     break;
-
                 //if the first argument is 'signup', it will add a Discord member to the participants list. The event must be given in second argument
                 case 'signin':
                 case 's':
@@ -493,9 +506,10 @@ Pour créer un event, indiquez sur la première ligne \'!event create\', suivit 
                     bot.reply(msg, "Erreur : option non reconnue. Quelques exemples :\n\
                     ```\n\
                     **Créer un event pour la section JDM ** : !event create JDM 2021/03/24 20:45 (puis ajoutez dans les lignes suivantes de votre message les détails de l'event)\n\
+                    **Modifier la description de l'event #15 ** : !event modify 15 (puis ajoutez dans les lignes suivantes de votre message les détails de l'event)\n\
                     **Voir une liste des events à venir** : !event list\n\
                     **Voir une liste de tous les events** : !event listall\n\
-                    **Visualiser l'event ayant le numero d'ID 15** : !event info 15\n\
+                    **Visualiser l'event #15** : !event info 15\n\
                     **S'inscrire à l'event #15** : !event signin 15\n\
                     **Se désinscrire de l'event #15** : !event signout 15\n\
                     **Supprimer l'event #15 (vous devez être officier)** : !event delete 15\n\

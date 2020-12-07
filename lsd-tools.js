@@ -300,6 +300,33 @@ async function event_info(db, id) {
 }
 
 /**
+ * Looks for event ID in events table, if found check the author correponds to the one given and modify the event desciption.
+ * @param {*} db Database
+ * @param {*} id number id of the event
+ * @param {*} author_tag discord tag (name and unique discriminator) of the person creating the event
+ * @param {*} description text describing the event
+ */
+async function event_modify(db, id, author_tag, description) {
+    try {
+        const resu = await db.query("SELECT * FROM lsd_events WHERE event_id=? ", id, function (err, result) {
+            if (err) { throw err; }
+        });
+        if (resu[0].length === 0) { return "Erreur : impossible de trouver l'event #" + id; }
+        let event_author_tag = resu[0][0].author_discord_tag;
+        if (event_author_tag !== author_tag) { return "Erreur : seul " + event_author_tag + " peut modifier l'event #" + id; }
+        const resu2 = await db.query("UPDATE lsd_events SET description=? WHERE event_id = ?", [description, id], function (err) {
+            if (err) { throw err; }
+        });
+        return ":white_check_mark: l'event #" + id + " a été modifié.";
+    }
+    catch (e) {
+        console.error(e);
+    }
+}
+
+
+
+/**
  * Looks for event ID in events table, sign in the user to the event. (updates the database)
  * @param {*} db Database
  * @param {*} id number id of the event
@@ -422,3 +449,4 @@ exports.event_delete = event_delete;
 exports.event_list = event_list;
 exports.event_sign_in = event_sign_in;
 exports.event_sign_out = event_sign_out;
+exports.event_modify = event_modify;
