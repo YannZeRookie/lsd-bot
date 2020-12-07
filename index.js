@@ -380,7 +380,7 @@ async function event_msg(bot, msg) {
     const msglines = msg.message.content.split('\n');
     const arguments = msglines[0].trim().split(/ +/g);
     const member = await getMessageMember(msg);
-    const highest_rank = member.roles.highest;
+    const highest_rank = member.roles.highest.name;
     if (highest_rank !== '@everyone') {
         if (!arguments[1]) {
             // if no argument was given, give help to the user to explain how things work
