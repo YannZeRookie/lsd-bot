@@ -257,12 +257,30 @@ Bon séjour parmi nous ! - Les Scorpions du Désert");
                             discord_username: (target_member.nickname ?? target_member.displayName),
                             by_discord_id: msg.user.id,
                             by_discord_username: (cur_member.nickname ?? cur_member.displayName)
-                        });
+                        }, true);
                     }
                     catch (e) {
                         bot.reply(msg, e);
                     }
                 });
+            }
+            catch (e) {
+                bot.reply(msg, e);
+            }
+            break;
+        case 'review':
+            // Review and purge invites (manual version of the cron-job, useful for debugging)
+            try {
+                if (!msg.guild) throw "Error: please un this command from a server channel";
+                //await lsd_tools.reviewInvites(db, msg.guild);
+                const guild = msg.guild;
+                const invite_role = await guild.roles.fetch('404693131573985280');
+                var loners = [];
+                for (const m of invite_role.members) {
+                    loners.push(m.username);
+                }
+                var txt = "Invités: " + loners.join(', ');
+                bot.reply(msg, txt);
             }
             catch (e) {
                 bot.reply(msg, e);
@@ -436,15 +454,15 @@ Pour créer un event, indiquez sur la première ligne \'!event create\', suivit 
                     break;
                 //if the first argument is 'info', it will display information about the event given in second argument
                 case 'info':
-                    case 'i':
-                        if (!arguments[2]) {
-                            bot.reply(msg, 'Erreur : veuillez indiquer un numéro d\'identifiant d\'event.');
-                        }
-                        else {
-                            const ianswer = await lsd_tools.event_info(db, arguments[2]);
-                            bot.reply(msg, ianswer);
-                        }
-                        break;
+                case 'i':
+                    if (!arguments[2]) {
+                        bot.reply(msg, 'Erreur : veuillez indiquer un numéro d\'identifiant d\'event.');
+                    }
+                    else {
+                        const ianswer = await lsd_tools.event_info(db, arguments[2]);
+                        bot.reply(msg, ianswer);
+                    }
+                    break;
                 // if the first argument is 'modify', il will check for an event id, and modify the description of the 
                 case 'modify':
                 case 'modifier':

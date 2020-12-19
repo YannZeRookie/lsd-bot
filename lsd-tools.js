@@ -127,44 +127,48 @@ async function invite(db, guild, target_member, cur_user, expiration) {
  * @param {*} db Database
  * @param {*} guild Guild
  * @param {*} invitation from the lsd_invitations table
+ * @param {boolean} send_messages   true if messages should be sent to targets
  */
-async function degrade_invite(db, guild, invitation) {
+async function degrade_invite(db, guild, invitation, send_messages) {
     try {
         if (guild == null) return;
         try {
             const target_member = await guild.members.fetch(invitation.discord_id);
             if (!target_member) {
-                throw "Not a member anymore";
+                throw "User " + invitation.discord_id + " is not a member anymore";
             }
             var is_invite = target_member.roles.cache.some(role => { return role.name == 'Invité'; });
             if (is_invite) {
                 // Change Role
                 await target_member.roles.remove('404693131573985280'); // Role ID = '404693131573985280'
-                // Send PM to target
-                var message = "Bonjour, c'est le Bot du serveur Discord des Scorpions du Désert !\n" +
-                    "Je t'ai automatiquement repassé(e) en simple Visiteur. J'espère que ton passage sur notre serveur s'est bien passé.\n" +
-                    "Si tu souhaites de nouveau jouer avec nous, deux solutions :\n" +
-                    "- Soit tu te fais ré-inviter";
-                if (invitation.by_discord_id) {
-                    message += " (c'était **" + invitation.by_discord_username + "** qui s'était occupé de toi la dernière fois)"
-                }
-                message += "\n- Soit tu décides de nous rejoindre pour de bon ! Il te suffit de taper ici la commande `!inscription` et je te guiderai vers notre site web\n" +
-                    "À bientôt j'espère ! - Les LSD";
-                await target_member.send(message);
-                // PM to the user who created the invitations
-                if (invitation.by_discord_id) {
-                    var by_member = await guild.members.fetch(invitation.by_discord_id);
-                    if (by_member) {
-                        await by_member.send(`Ton invité(e) **${invitation.discord_username}** a été rétrogradé en simple Visiteur.` + "\n" +
-                            "Un message lui a été envoyé pour lui expliquer quoi faire pour se faire ré-inviter ou pour s'inscrire pour de bon."
-                        );
+                if (send_messages) {
+                    // Send PM to target
+                    var message = "Bonjour, c'est le Bot du serveur Discord des Scorpions du Désert !\n" +
+                        "Je t'ai automatiquement repassé(e) en simple Visiteur. J'espère que ton passage sur notre serveur s'est bien passé.\n" +
+                        "Si tu souhaites de nouveau jouer avec nous, deux solutions :\n" +
+                        "- Soit tu te fais ré-inviter";
+                    if (invitation.by_discord_id) {
+                        message += " (c'était **" + invitation.by_discord_username + "** qui s'était occupé de toi la dernière fois)"
+                    }
+                    message += "\n- Soit tu décides de nous rejoindre pour de bon ! Il te suffit de taper ici la commande `!inscription` et je te guiderai vers notre site web\n" +
+                        "À bientôt j'espère ! - Les LSD";
+                    await target_member.send(message);
+                    // PM to the user who created the invitations
+                    if (invitation.by_discord_id) {
+                        var by_member = await guild.members.fetch(invitation.by_discord_id);
+                        if (by_member) {
+                            await by_member.send(`Ton invité(e) **${invitation.discord_username}** a été rétrogradé en simple Visiteur.` + "\n" +
+                                "Un message lui a été envoyé pour lui expliquer quoi faire pour se faire ré-inviter ou pour s'inscrire pour de bon."
+                            );
+                        }
                     }
                 }
             }
         }
         catch (e) {
             // It's OK, we'll simply purge the database
-            console.log(`Invitation roll-back: did not find member ${invitation.discord_username} (${invitation.discord_id})`);
+            //console.log(`Invitation roll-back: did not find member ${invitation.discord_username} (${invitation.discord_id})`);
+            console.error(e);
         }
 
         // If present in database, change role there too
@@ -199,31 +203,45 @@ async function degrade_invite(db, guild, invitation) {
  */
 async function reviewInvites(db, guild) {
     try {
-        const invite_role = guild ? guild.roles.cache.find(role => role.name === 'Invité') : null;
-        //-- Find timed-out invitations
-        const found_res = await db.query("SELECT * FROM lsd_invitations WHERE created_on + expiration*24*3600 < unix_timestamp()");
-        for (const invitation of found_res[0]) {
-            await degrade_invite(db, guild, invitation);
-        }
-
         //-- Shoot down a few invites who do not have any invitations
         //   Note: the following is an example of iterating thru a Collection in sync mode
-        var loners = [];
-        for (const m of invite_role.members) {
-            const member = m[1];
-            if (loners.length <= 20) {
-                const res = await db.query("SELECT id FROM lsd_invitations WHERE discord_id=?", [member.id]);
-                //if ((res[0].length == 0) && (member.id == "404722937183076354")) {
-                if (res[0].length == 0) {
-                    loners.push(member);
-                }
-            }
-        };
-        for (const member of loners) {
-            await degrade_invite(db, guild, {
-                discord_id: member.id,
-                discord_username: (member.nickname ?? member.displayName)
+        if (guild) {
+            /*
+            const invite_role = await guild.roles.fetch('404693131573985280');
+            const c1 = guild.members.cache;
+            const allMembers = await guild.members.fetch({ limit: 10, time: 10000 });
+            const c2 = guild.members.cache;
+            const invite_role2 = await guild.roles.fetch('404693131573985280');
+            invite_role.members.forEach(m => {
+                console.log(m.id);
             });
+            */
+
+            const invite_role = await guild.roles.fetch('404693131573985280');
+            var loners = [];
+            for (const m of invite_role.members) {
+                const member = m[1];
+                if (loners.length <= 20) {
+                    const res = await db.query("SELECT id FROM lsd_invitations WHERE discord_id=?", [member.id]);
+                    //if ((res[0].length == 0) && (member.id == "404722937183076354")) {
+                    if (res[0].length == 0) {
+                        loners.push(member);
+                    }
+                }
+            };
+            for (const member of loners) {
+                await degrade_invite(db, guild, {
+                    discord_id: member.id,
+                    discord_username: (member.nickname ?? member.displayName)
+                }, false);
+            }
+
+            //-- Find timed-out invitations from Database
+            const found_res = await db.query("SELECT * FROM lsd_invitations WHERE created_on + expiration*24*3600 < unix_timestamp()");
+            for (const invitation of found_res[0]) {
+                await degrade_invite(db, guild, invitation, true);
+            }
+
         }
     }
     catch (e) {
