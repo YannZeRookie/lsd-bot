@@ -36,7 +36,7 @@ if (!config.noCron) {
     cron.schedule('0 45 17 * * *', async () => {
         try {
             var guild = await discordBot.config.client.guilds.cache.get(config.guild_id);
-            lsd_tools.reviewInvites(db, guild);
+            lsd_tools.reviewInvites(db, discordConfig, guild);
         }
         catch (e) {
             console.error('Error in cron: ' + e);
@@ -272,15 +272,19 @@ Bon séjour parmi nous ! - Les Scorpions du Désert");
             // Review and purge invites (manual version of the cron-job, useful for debugging)
             try {
                 if (!msg.guild) throw "Error: please un this command from a server channel";
-                //await lsd_tools.reviewInvites(db, msg.guild);
+                await lsd_tools.reviewInvites(db, discordConfig, msg.guild);
+            }
+            catch (e) {
+                bot.reply(msg, e);
+            }
+            break;
+        case 'test':
+            // Test area
+            try {
+                if (!msg.guild) throw "Error: please un this command from a server channel";
                 const guild = msg.guild;
-                const invite_role = await guild.roles.fetch('404693131573985280');
-                var loners = [];
-                for (const m of invite_role.members) {
-                    loners.push(m.username);
-                }
-                var txt = "Invités: " + loners.join(', ');
-                bot.reply(msg, txt);
+                const role = await guild.roles.fetch('404693131573985280');
+                const members = role.members;
             }
             catch (e) {
                 bot.reply(msg, e);

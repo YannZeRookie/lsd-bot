@@ -5,6 +5,9 @@
  */
 
 var crypto = require("crypto");
+var lsd_rest = require('./lsd-rest');
+
+const invite_role_id = '404693131573985280';
 
 function buildConnectionKey(db, user) {
     if (!db) {
@@ -110,7 +113,7 @@ async function invite(db, guild, target_member, cur_user, expiration) {
         );
 
         // Set target user's role to Invité (role id=404693131573985280)
-        await target_member.roles.add('404693131573985280');
+        await target_member.roles.add(invite_role_id);
     }
     catch (e) {
         console.error(e);
@@ -140,7 +143,7 @@ async function degrade_invite(db, guild, invitation, send_messages) {
             var is_invite = target_member.roles.cache.some(role => { return role.name == 'Invité'; });
             if (is_invite) {
                 // Change Role
-                await target_member.roles.remove('404693131573985280'); // Role ID = '404693131573985280'
+                await target_member.roles.remove(invite_role_id); // Role ID = '404693131573985280'
                 if (send_messages) {
                     // Send PM to target
                     var message = "Bonjour, c'est le Bot du serveur Discord des Scorpions du Désert !\n" +
@@ -199,41 +202,22 @@ async function degrade_invite(db, guild, invitation, send_messages) {
 /**
  * Review the invites and turn some of them back to visiteurs
  * @param {*} db Database
+ * @param {*} discordConfig Discord Bot token
  * @param {*} guild Guild (aka LSD Server)
  */
-async function reviewInvites(db, guild) {
+async function reviewInvites(db, discordConfig, guild) {
     try {
-        //-- Shoot down a few invites who do not have any invitations
-        //   Note: the following is an example of iterating thru a Collection in sync mode
         if (guild) {
-            /*
-            const invite_role = await guild.roles.fetch('404693131573985280');
-            const c1 = guild.members.cache;
-            const allMembers = await guild.members.fetch({ limit: 10, time: 10000 });
-            const c2 = guild.members.cache;
-            const invite_role2 = await guild.roles.fetch('404693131573985280');
-            invite_role.members.forEach(m => {
-                console.log(m.id);
-            });
-            */
-
-            const invite_role = await guild.roles.fetch('404693131573985280');
-            var loners = [];
-            for (const m of invite_role.members) {
-                const member = m[1];
-                if (loners.length <= 20) {
-                    const res = await db.query("SELECT id FROM lsd_invitations WHERE discord_id=?", [member.id]);
-                    //if ((res[0].length == 0) && (member.id == "404722937183076354")) {
-                    if (res[0].length == 0) {
-                        loners.push(member);
-                    }
+            //-- Shoot down the invites who do not have any invitations in the database
+            const invites = await lsd_rest.getAllMembers(discordConfig, guild, invite_role_id);
+            for (const i of invites) {
+                const res = await db.query("SELECT id FROM lsd_invitations WHERE discord_id=?", [i.user.id]);
+                if (res[0].length == 0) {
+                    await degrade_invite(db, guild, {
+                        discord_id: i.user.id,
+                        discord_username: (i.nick ?? i.user.username)
+                    }, false);
                 }
-            };
-            for (const member of loners) {
-                await degrade_invite(db, guild, {
-                    discord_id: member.id,
-                    discord_username: (member.nickname ?? member.displayName)
-                }, false);
             }
 
             //-- Find timed-out invitations from Database

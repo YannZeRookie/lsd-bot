@@ -4,6 +4,7 @@
   "description": "Le Bot des Scorpions du Désert",
   "main": "index.js",
   "dependencies": {
+    "axios": "^0.19.0",
     "botkit-discord": "YannZeRookie/botkit-discord#discord-api-v12",
     "discord.js": "^12.5",
     "mysql2": "^2.1.0",
@@ -11,7 +12,6 @@
     "skills-validator": "./node_modules/botbuilder/skills-validator/skills-validator-1.0.0.tgz",
     "util": "^0.11.1"
   },
-  "devDependencies": {},
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },

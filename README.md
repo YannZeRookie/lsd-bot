@@ -19,6 +19,7 @@ Libraries
   * Good article about async/await in discord.js: https://github.com/AnIdiotsGuide/discordjs-bot-guide/blob/master/other-guides/async-await.md
   * Good article about async/await in JS: https://yashints.dev/blog/2019/08/17/js-async-await
 * Looking at NPM packages: https://www.npmjs.com/
+* Axios package to perform HTTP queries easily: https://www.npmjs.com/package/axios
 
 * Discord Botkit adaptation: https://github.com/brh55/botkit-discord
 * Botkit:
