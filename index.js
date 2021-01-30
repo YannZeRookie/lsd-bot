@@ -192,6 +192,15 @@ async function processCommand(command, context, bot, msg) {
         case 'hello':
             bot.reply(msg, 'Salut à toi ' + msg.message.author.username + ' ! Pour avoir de l\'aide, tape `' + config.prefix + 'aide`');
             break;
+        case 'kill_list':
+        case 'k':
+            try {
+                kill_list_msg(bot, msg);
+            }
+            catch (e) {
+                bot.reply(msg, e);
+            }
+            break;
         case 'lance':
             lance(bot, msg);
             break;
@@ -328,6 +337,7 @@ function helpMessage() {
 !inviter @Toto 42   Inviter un Visiteur pour un nombre de jours précis (Officiers ou + uniquement)\n\
 !aide               Obtenir cette aide\n\
 !event              Gestion des événements\n\
+!kill_list          Affichage des listes de joueurs ennemis ou griefers\n\
 !lance nombre       Lance un dé entre 1 et 'nombre'. Ex : dé à 6 faces : !lance 6\n\
 !raccourcis         Alternatives courtes des commandes\n\
         ```";
@@ -343,6 +353,7 @@ function sortcutsMessage() {
         "`!inscription` :  `!signup`, `!go` \n" +
         "`!inviter    ` :  `!invite`, `!invit`, `!invitation`, `!i`\n" +
         "`!event      ` :  `!e`\n" +
+        "`!kill_list  ` :  `!k`\n" +
         "`!aide       ` :  `!help`, `!sos`, `!h`, `!a`\n" +
         "`!raccourcis ` :  `!shortcuts`, `!short`, `!synomynmes`, `!r`\n" +
         ""
@@ -393,6 +404,8 @@ async function getMessageMember(msg) {
     return member;
 }
 
+
+
 /**
  * Event manager through the bot and a mysql table
  * @param {*} bot 
@@ -403,12 +416,12 @@ async function event_msg(bot, msg) {
     const arguments = msglines[0].trim().split(/ +/g);
     const member = await getMessageMember(msg);
     const highest_rank = member.roles.highest.name;
-    if (highest_rank !== '@everyone') {
+    if (highest_rank === "Scorpion" || highest_rank === "Star Citizen"|| highest_rank === "Dual-Universe" || highest_rank === "Officier" || highest_rank === "Conseiller" || highest_rank === "Admin") {  // Only Scorpions can uses the events fonctionalities
         if (!arguments[1]) {
             // if no argument was given, give help to the user to explain how things work
             bot.reply(msg, "Erreur : commande incomplète. Quelques exemples de gestion d'events :\n\
             ```\n\
-            **Créer un event pour la section JDM ** : !event create JDM 2021/03/24 20:45 (puis ajoutez dans les lignes suivantes de votre message les détails de l'event)\n\
+            **Créer un event pour la section JDM ** : !event create JDM 2021/03/24 20:45 Titre (puis ajoutez dans les lignes suivantes de votre message les détails de l'event)\n\
             **Modifier la description de l'event #15 ** : !event modify 15 (puis ajoutez dans les lignes suivantes de votre message les détails de l'event)\n\
             **Voir une liste des events à venir** : !event list\n\
             **Voir une liste de tous les events** : !event listall\n\
@@ -422,31 +435,25 @@ async function event_msg(bot, msg) {
                 //if the first argument is 'create', it will create a new event, according to the other arguments given
                 case 'create':
                 case 'c':
-                    if (member.roles.cache.some(role => role.name === 'Scorpion')) {    // Only Scorpions can create an Event
-                        if (!arguments[2] || !arguments[3] || !arguments[4] || msglines.length < 2) {
-                            bot.reply(msg, 'Erreur : paramètres invalides ou description de l\'event manquante.\n\
+                    if (!arguments[2] || !arguments[3] || !arguments[4] || !arguments[5] || msglines.length < 2) {
+                        bot.reply(msg, 'Erreur : paramètres invalides ou description de l\'event manquante.\n\
 Pour créer un event, indiquez sur la première ligne \'!event create\', suivit d\'une section(JDM, DU, etc...), d\'une date (AAAA/MM/JJ), d\'une heure (HH:MM)\
-, finalement ajoutez le reste des informations concernant l\'event dans les lignes suivantes');
-                        }
-                        else {
-                            let eventdate = new Date(arguments[3] + ' ' + arguments[4]);
-                            if (eventdate.toDateString() === "Invalid Date") {
-                                bot.reply('Erreur : date/heure incompréhensible : ' + arguments[3] + ' ' + arguments[3] + '. Le format attendu est : AAAA/MM/JJ HH:MM');
-                            }
-                            else {
-                                msglines.splice(0, 1);
-                                let description = msglines.join('\n');
-                                //event create function arguments: (database, section, datetime, author.discord_id, author.discord_tag, description-de-levent)
-                                const dbanswer = await lsd_tools.event_create(db, arguments[2], eventdate, msg.message.author.id, msg.message.author.tag, description);
-                                bot.reply(msg, dbanswer);
-                            }
-                        }
+, d\'un titre, et finalement ajoutez le reste des informations concernant l\'event dans les lignes suivantes');
                     }
                     else {
-                        bot.reply(msg, 'Erreur : il faut être Scorpion pour créer un event.');
+                        let eventdate = new Date(arguments[3] + ' ' + arguments[4]);
+                        if (eventdate.toDateString() === "Invalid Date") {
+                            bot.reply('Erreur : date/heure incompréhensible : ' + arguments[3] + ' ' + arguments[3] + '. Le format attendu est : AAAA/MM/JJ HH:MM');
+                        }
+                        else {
+                            msglines.splice(0, 1);
+                            let description = msglines.join('\n');
+                            //event create function arguments: (database, section, datetime, author.discord_id, author.discord_tag, description-de-levent)
+                            const dbanswer = await lsd_tools.event_create(db, arguments[2], eventdate, msg.message.author.id, msg.message.author.tag, description, arguments[5]);
+                            bot.reply(msg, dbanswer);
+                        }
                     }
                     break;
-
                 //if the first argument is 'delete', it will delete an existing event that must be given in the second argument
                 case 'delete':
                 case 'd':
@@ -527,7 +534,7 @@ Pour créer un event, indiquez sur la première ligne \'!event create\', suivit 
                     // first argument cannot be recognized
                     bot.reply(msg, "Erreur : option non reconnue. Quelques exemples :\n\
                     ```\n\
-                    **Créer un event pour la section JDM ** : !event create JDM 2021/03/24 20:45 (puis ajoutez dans les lignes suivantes de votre message les détails de l'event)\n\
+                    **Créer un event pour la section JDM ** : !event create JDM 2021/03/24 20:45 Titre (puis ajoutez dans les lignes suivantes de votre message les détails de l'event)\n\
                     **Modifier la description de l'event #15 ** : !event modify 15 (puis ajoutez dans les lignes suivantes de votre message les détails de l'event)\n\
                     **Voir une liste des events à venir** : !event list\n\
                     **Voir une liste de tous les events** : !event listall\n\
@@ -540,7 +547,73 @@ Pour créer un event, indiquez sur la première ligne \'!event create\', suivit 
         }
     }
     else {
-        bot.reply(msg, "Erreur : Vous devez être au moins Invité pour utiliser cette commande.");
+        bot.reply(msg, "Erreur : Vous devez être Scorpion pour utiliser cette commande.");
+    }
+}
+
+
+
+
+/**
+ * kill_list manager through the bot and a mysql table
+ * each section can memorized a list of identified griefers or enemies.
+ * @param {*} bot 
+ * @param {*} msg 
+ */
+async function kill_list_msg(bot, msg) {
+    const msglines = msg.message.content.split('\n');
+    const arguments = msglines[0].trim().split(/ +/g);
+    const member = await getMessageMember(msg);
+    const highest_rank = member.roles.highest.name;
+    if (highest_rank === "Scorpion" || highest_rank === "Star Citizen"|| highest_rank === "Dual-Universe" || highest_rank === "Officier" || highest_rank === "Conseiller" || highest_rank === "Admin") {  // Only Scorpions can uses the events fonctionalities
+        if (!arguments[1]) { // if no argument was given, give help to the user to explain how things work
+            bot.reply(msg, "Erreur : commande incomplète. Quelques exemples de gestion des kill_lists :\n\
+            ```\n\
+            **Visualiser la kill_list de la section SC ** : !kill_list SC\n\
+            **(officiers) ajouter le joueur psykoKiller à la kill list de la section DU** : !kill_list DU add psykoKiller (puis ajoutez dans les lignes suivantes une description)\n\
+            **(officiers) retirer le joueur psykoKiller de la kill list de la section DU** : !kill_list DU remove psykoKiller\n\
+            Raccourcis : 'kill_list'='k', 'add'='a' , 'remove'='r'```" );
+        } else {
+            if (!arguments[2]) {
+                const kanswer = await lsd_tools.kill_list_view(db, arguments[1]);   // display the kill list
+                bot.reply(msg, kanswer);
+            } else {
+                switch (arguments[2].toLowerCase()) {    
+                case 'add':
+                case 'a':
+                    if (highest_rank === "Officier" || highest_rank === "Conseiller" || highest_rank === "Admin") {  // Only Officers can add/remove names
+                        if (!arguments[3] || msglines.length < 2 ) {
+                            bot.reply(msg, "Erreur : Nom ou description manquante.");
+                        } else {
+                            msglines.splice(0, 1);
+                            let description = msglines.join('\n');
+                            const aanswer = await lsd_tools.kill_list_add(db, arguments[1], arguments[3], description);   // add a name to the list
+                            bot.reply(msg, aanswer);
+                        }
+                    } else {  bot.reply(msg, "Erreur : Vous devez être Officier modifier la kill_list."); }
+                    break;
+                case 'remove':
+                case 'r':
+                    if (highest_rank === "Officier" || highest_rank === "Conseiller" || highest_rank === "Admin") {  // Only Officers can add/remove names
+                        const ranswer = await lsd_tools.kill_list_remove(db, arguments[1], arguments[3]);   // remove a name from the list
+                        bot.reply(msg, ranswer);
+                    } else {  bot.reply(msg, "Erreur : Vous devez être Officier modifier la kill_list."); }
+                    break;
+
+                default:
+                    // first argument cannot be recognized
+                    bot.reply(msg, "Erreur : option non reconnue. Quelques exemples :\n\
+                    ```\n\
+                    **Visualiser la kill_list de la section SC ** : !kill_list SC\n\
+                    **(officiers) ajouter le joueur psykokilla à la kill list de la section DU** : !kill_list DU add psykokilla (puis ajoutez dans les lignes suivantes de votre message ajouter une description de la personne, son orga, pourquoi elle se retrouve dans cette liste, etc...)\n\
+                    **(officiers) retirer le joueur psykokilla de la kill list de la section DU** : !kill_list DU remove psykokilla\n\
+                    Raccourcis : 'kill_list'='k', 'add'='a' , 'remove'='r'```" );
+                }
+            }
+        }
+    }
+    else {
+        bot.reply(msg, "Erreur : Vous devez être Scorpion pour utiliser cette commande.");
     }
 }
 

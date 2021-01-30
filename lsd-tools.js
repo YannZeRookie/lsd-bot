@@ -241,8 +241,9 @@ async function reviewInvites(db, discordConfig, guild) {
  * @param {*} author_id discord id of the person creating the event
  * @param {*} author_tag discord tag (name and unique discriminator) of the person creating the event
  * @param {*} description text describing the event
+ * @param {*} title title given to the event
  */
-async function event_create(db, section, eventdate, author_id, author_tag, description) {
+async function event_create(db, section, eventdate, author_id, author_tag, description, title) {
     try {
         let nowdate = Date.now();
         if (nowdate > eventdate) { return "Erreur : vous ne pouvez pas créer un event pour une date passée."; }
@@ -252,11 +253,11 @@ async function event_create(db, section, eventdate, author_id, author_tag, descr
         sections_data[0].forEach(elem => section_tags.push(elem.tag));
         //if sections and roles are acceptable, create the event
         if (section_tags.includes(section)) {
-            result = await db.query('INSERT INTO lsd_events SET event_id=?,section_tag=?,date_time=?,author_discord_id=?,author_discord_tag=?,description=? ',
-                [0, section, eventdate, author_id, author_tag, description], function (err) {
+            result = await db.query('INSERT INTO lsd_events SET event_id=?,section_tag=?,date_time=?,author_discord_id=?,author_discord_tag=?,description=?,title=? ',
+                [0, section, eventdate, author_id, author_tag, description, title], function (err) {
                     if (err) { throw err; }
                 });
-            return ':white_check_mark: **Event créé avec succès.** \n Tapez \' !event info ' + result[0].insertId + ' \' pour les informations sur cet event.';
+            return ':white_check_mark: **Event créé avec succès :** __'+ title +'__ \n Tapez \' !event info ' + result[0].insertId + ' \' pour les informations sur cet event.';
         }
         // otherwise reply with an error
         else {
@@ -291,7 +292,8 @@ async function event_info(db, id) {
         let inscrits = resu[0][0].participants ?? "";
         let author_tag = resu[0][0].author_discord_tag;
         let count = (inscrits.match(/¸/g) || []).length;
-        let resultstring = "**Event #" + id + " :**\nSection " + resu[0][0].section_tag + "\n:calendar_spiral: " + eventdate + "\nCréé par " + author_tag + "\n---------------------\n";
+        let title = resu[0][0].title;
+        let resultstring = "**Event #" + id + " : ** __"+ title +"__\nSection " + resu[0][0].section_tag + "\n:calendar_spiral: " + eventdate + "\nCréé par " + author_tag + "\n---------------------\n";
         resultstring += resu[0][0].description + "\n---------------------\n :scorpion: " + count + " inscrits : " + inscrits;
         resultstring += "\nRépondez \' !e s " + id + " \' pour vous inscrire.";
         return resultstring;
@@ -315,11 +317,12 @@ async function event_modify(db, id, author_tag, description) {
         });
         if (resu[0].length === 0) { return "Erreur : impossible de trouver l'event #" + id; }
         let event_author_tag = resu[0][0].author_discord_tag;
+        let title = resu[0][0].title;
         if (event_author_tag !== author_tag) { return "Erreur : seul " + event_author_tag + " peut modifier l'event #" + id; }
         const resu2 = await db.query("UPDATE lsd_events SET description=? WHERE event_id = ?", [description, id], function (err) {
             if (err) { throw err; }
         });
-        return ":white_check_mark: l'event #" + id + " a été modifié.";
+        return ":white_check_mark: l'event #" + id + " __"+ title+"__ a été modifié.";
     }
     catch (e) {
         console.error(e);
@@ -343,13 +346,14 @@ async function event_sign_in(db, id, author_tag) {
         let nowdate = Date.now();
         if (nowdate > resu[0][0].date_time) { return "Erreur : L'event #" + id + " est passé, vous ne pouvez plus vous inscrire."; }
         let inscrits = resu[0][0].participants ?? "";
-        if (inscrits.includes(author_tag)) { return author_tag + " est déjà inscrit(e) à l'event #" + id + "."; }
+        let title = resu[0][0].title;
+        if (inscrits.includes(author_tag)) { return author_tag + " est déjà inscrit(e) à l'event #" + id + ". __"+ title +"__"; }
         else {
             inscrits += author_tag + " ¸ ";
             const resu = await db.query("UPDATE lsd_events SET participants=? WHERE event_id = ?", [inscrits, id], function (err) {
                 if (err) { throw err; }
             });
-            return ":white_check_mark: " + author_tag + " est maintenant inscrit(e) à l'event #" + id + ".";
+            return ":white_check_mark: " + author_tag + " est maintenant inscrit(e) à l'event #" + id + ". __"+ title +"__";
         }
     }
     catch (e) {
@@ -372,15 +376,16 @@ async function event_sign_out(db, id, author_tag) {
         let nowdate = Date.now();
         if (nowdate > resu[0][0].date_time) { return "Erreur : L'event #" + id + " est passé, vous ne pouvez plus vous désinscrire."; }
         let inscrits = resu[0][0].participants ?? "";
+        let title = resu[0][0].title;
         if (inscrits.includes(author_tag)) {
             inscrits = inscrits.replace(author_tag + " ¸ ", "");
             const resu = await db.query("UPDATE lsd_events SET participants=? WHERE event_id = ?", [inscrits, id], function (err, result) {
                 if (err) { throw err; }
             });
-            return ":red_circle: " + author_tag + " n'est plus inscrit(e) à l'event #" + id + ".";
+            return ":red_circle: " + author_tag + " n'est plus inscrit(e) à l'event #" + id + ". __"+ title +"__";
         }
         else {
-            return author_tag + " n'est pas inscrit(e) à l'event #" + id + ".";
+            return author_tag + " n'est pas inscrit(e) à l'event #" + id + ". __"+ title +"__";
         }
     }
     catch (e) {
@@ -401,11 +406,12 @@ async function event_delete(db, id, highest_rank, author_tag) {
             if (err) { throw err; }
         });
         let event_author_tag = resu[0][0].author_discord_tag;
+        let title = resu[0][0].title;
         if (highest_rank === "Officier" || highest_rank === "Conseiller" || highest_rank === "Admin" || event_author_tag === author_tag) {
             const resu = await db.query("DELETE FROM lsd_events WHERE event_id=?; ", id, function (err, result) {
                 if (err) { throw err; }
             });
-            return "L'event #" + id + " a été supprimé.";
+            return "L'event #" + id + "  __"+ title +"__ , a été supprimé.";
         }
         else { return 'Erreur : Il faut être Officier, ou être le créateur de l\'event pour le supprimer.'; }
     }
@@ -427,7 +433,7 @@ async function event_list(db, option) {
         const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', hour: 'numeric', minute: 'numeric' };
         events_data[0].forEach(function (elem) {
             var edate = elem.date_time.toLocaleDateString('fr-FR', options);
-            resultstring += "**Event #" + elem.event_id + " :** section " + elem.section_tag + ", " + edate + ", créé par " + elem.author_discord_tag + "\n";
+            resultstring += "**Event #" + elem.event_id + " :** __"+ elem.title +"__, section " + elem.section_tag + ", " + edate + ", créé par " + elem.author_discord_tag + "\n";
         });
         return resultstring;
     }
@@ -437,7 +443,106 @@ async function event_list(db, option) {
 }
 
 
+/**
+ * Looks in the database for the kill_list, filter the names with the section requested, and returns the list.
+ * @param {*} db Database
+ * @param {*} section string containing a section tag
+ */
+async function kill_list_view(db, section) {
+    try {
+        //getting list of acceptable sections and roles
+        let section_tags = [];
+        const sections_data = await db.query("SELECT * FROM lsd_section WHERE archived=0");
+        sections_data[0].forEach(elem => section_tags.push(elem.tag));
+        //if sections and roles are acceptable, create the entry
+        if (section_tags.includes(section)) {
+            const events_data = await db.query("SELECT * FROM lsd_kill_list WHERE section_tag=? ORDER BY enemy_name",[section], function (err) { if (err) { throw err; } });
+            var resultstring = ':skull: Kill list pour la section __'+section+'__ :\n';
+            events_data[0].forEach(function (elem) { resultstring += "**" + elem.enemy_name + "** : "+ elem.enemy_description + "\n"; });
+            return resultstring;
+            } else {
+                let errorstring = "Erreur : "
+                if (!section_tags.includes(section)) {
+                    errorstring += "section inconnue. Les tags de section sont : ";
+                    errorstring += section_tags.join(', ');
+                }
+                return errorstring;
+            }
+        }
+    catch (e) {
+        console.error(e);
+    }
+}
 
+
+/**
+ * Adds an entry in the database for the kill_list.
+ * @param {*} db Database
+ * @param {*} section string containing a section tag
+ * @param {*} enemy_name string containing a section tag
+ * @param {*} description string containing a section tag
+ */
+async function kill_list_add(db, section, enemy_name, description) {
+    try {
+        //getting list of acceptable sections and roles
+        let section_tags = [];
+        const sections_data = await db.query("SELECT * FROM lsd_section WHERE archived=0");
+        sections_data[0].forEach(elem => section_tags.push(elem.tag));
+        //if sections and roles are acceptable, create the entry
+        if (section_tags.includes(section)) {
+            result = await db.query('INSERT INTO lsd_kill_list SET id=?,section_tag=?,enemy_name=?,enemy_description=? ',
+                [0, section, enemy_name, description], function (err) { if (err) { throw err; }  });
+            return ':white_check_mark: **Id ajouté à la kill list :** ('+ section +') ' + enemy_name;
+        }
+        // otherwise reply with an error
+        else {
+            let errorstring = "Erreur : "
+            if (!section_tags.includes(section)) {
+                errorstring += "section inconnue. Les tags de section sont : ";
+                errorstring += section_tags.join(', ');
+            }
+            return errorstring;
+        }
+    }
+    catch (e) {
+        console.error(e);
+    }
+}
+
+
+/**
+ * Removes an entry in the database for the kill_list.
+ * @param {*} db Database
+ * @param {*} section string containing a section tag
+ * @param {*} enemy_name string containing a section tag
+ */
+async function kill_list_remove(db, section, enemy_name) {
+    try {
+        //getting list of acceptable sections and roles
+        let section_tags = [];
+        const sections_data = await db.query("SELECT * FROM lsd_section WHERE archived=0");
+        sections_data[0].forEach(elem => section_tags.push(elem.tag));
+        //if sections and roles are acceptable, create the entry
+        if (section_tags.includes(section)) {
+            const resu = await db.query("DELETE FROM lsd_kill_list WHERE section_tag=? AND enemy_name=?; ", [section, enemy_name], function (err, result) {
+                if (err) { throw err; }
+                });
+            return '**Id retiré de la kill list :** ('+ section +') ' + enemy_name;
+        }
+        // otherwise reply with an error
+        else {
+            let errorstring = "Erreur : "
+            if (!section_tags.includes(section)) {
+                errorstring += "section inconnue. Les tags de section sont : ";
+                errorstring += section_tags.join(', ');
+            }
+            return errorstring;
+        }
+    }
+    catch (e) {
+        console.error(e);
+    }
+}
 
 
 exports.buildConnectionKey = buildConnectionKey;
@@ -452,3 +557,6 @@ exports.event_list = event_list;
 exports.event_sign_in = event_sign_in;
 exports.event_sign_out = event_sign_out;
 exports.event_modify = event_modify;
+exports.kill_list_view = kill_list_view;
+exports.kill_list_add = kill_list_add;
+exports.kill_list_remove = kill_list_remove;
