@@ -457,8 +457,12 @@ async function kill_list_view(db, section) {
         //if sections and roles are acceptable, create the entry
         if (section_tags.includes(section)) {
             const events_data = await db.query("SELECT * FROM lsd_kill_list WHERE section_tag=? ORDER BY enemy_name",[section], function (err) { if (err) { throw err; } });
-            var resultstring = ':skull: Kill list pour la section __'+section+'__ :\n';
-            events_data[0].forEach(function (elem) { resultstring += "**" + elem.enemy_name + "** : "+ elem.enemy_description + "\n"; });
+            var resultstring = ':skull: Kill list pour la section __' + section + '__ :\n';
+            if (events_data[0].length) {
+                events_data[0].forEach(function (elem) { resultstring += "**" + elem.enemy_name + "** : " + elem.enemy_description + "\n"; });
+            } else {
+                resultstring += "*Liste vide*";
+            }
             return resultstring;
             } else {
                 let errorstring = "Erreur : "
