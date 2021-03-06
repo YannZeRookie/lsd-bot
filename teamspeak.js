@@ -63,19 +63,21 @@ async function getConnectionLink(roles, target) {
         await ts_lib.TeamSpeak.connect(ts_config).then(async teamspeak => {
             console.log("TeamSpeak: LSD-Bot connected to TeamSpeak server");
             try {
-                var sgid = '4363725';   // Invité server group id is default
+                var sgid = '4363725';   // Visiteur server group id is the default one
                 if (roles.some(role => role.name === 'Conseiller')) {
                     sgid = '4365577';
                 } else if (roles.some(role => role.name === 'Officier')) {
                     sgid = '4365576';
                 } else if (roles.some(role => role.name === 'Scorpion')) {
                     sgid = '4363724';
+                } else if (roles.some(role => role.name === 'Invité')) {
+                    sgid = '4366078';
                 }
                 const key = await teamspeak.privilegeKeyAdd(0, sgid, undefined, 'Clé pour ' + target, '');
                 token = key.token;
                 console.log('TeamSpeak: Generated token ' + token + ' for ' + target);
                 if (token) {
-                    result = 'ts3server://' + ts_config.host + '?port=' + ts_config.serverport + '&token=' + token;
+                    result = 'ts3server://' + ts_config.host + '?port=' + ts_config.serverport + '&token=' + token + '&password=iaMNY5JiDU23duku' + '&nickname=' + encodeURIComponent(target);
                 }
                 await teamspeak.logout();
                 console.log("TeamSpeak: LSD-Bot disconnected from TeamSpeak server");
