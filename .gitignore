@@ -2,6 +2,7 @@
 auth.json
 config.json
 db.json
+teamspeak.json
 .DS_Store
 notes.md
 .idea/

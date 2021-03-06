@@ -1,0 +1,9 @@
+{
+   "host": "HOST HERE",
+   "queryport": 10011,
+   "serverport": 10155,
+   "username": "LSD-Bot",
+   "password": "PASSWORD HERE",
+   "nickname": "LSD-Bot",
+   "protocol": "raw"
+}

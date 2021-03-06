@@ -25,6 +25,9 @@ if (mysqlConfig.host) {
     console.log('Running in no database mode');
 }
 
+// TeamSpeak
+var teamspeak = require('./teamspeak');
+
 // Load the LSD tools (users, roles, and sections management)
 var lsd_tools = require('./lsd-tools');
 
@@ -141,7 +144,7 @@ async function processCommand(command, context, bot, msg) {
                 console.log('Connection request from ' + msg.message.author.username + ' (' + msg.message.author.id + ')');
                 var key = lsd_tools.buildConnectionKey(db, msg.message.author);
                 newMessage = await msg.message.author.send("Voici ton lien de connexion : " + buidLoginUrl(key));
-                newMessage.delete({ timeout: 3600 * 1000 }); // Delete the message after one hour because the key will be expired by then. Note: we do NOT away for completion here, to avoid waiting for one hour!
+                newMessage.delete({ timeout: 3600 * 1000 }); // Delete the message after one hour because the key will be expired by then. Note: we do NOT wait for completion here, to avoid waiting for one hour!
                 if (context == 'ambient') {
                     msg.message.delete({ timeout: 4000 });   // Remove the message to avoid poluting the channel. Here again, no await
                 }
@@ -180,7 +183,7 @@ async function processCommand(command, context, bot, msg) {
                 console.log('Inscription request from ' + msg.message.author.username + ' (' + msg.message.author.id + ')');
                 var key = lsd_tools.buildConnectionKey(db, msg.message.author);
                 newMessage = await msg.message.author.send("Voici ton lien pour t'inscrire : " + buidLoginUrl(key));
-                newMessage.delete({ timeout: 3600 * 1000 }); // Delete the message after one hour because the key will be expired by then. Note: we do NOT away for completion here, to avoid waiting for one hour!
+                newMessage.delete({ timeout: 3600 * 1000 }); // Delete the message after one hour because the key will be expired by then. Note: we do NOT wait for completion here, to avoid waiting for one hour!
                 if (context == 'ambient') {
                     msg.message.delete({ timeout: 4000 });   // Remove the message to avoid poluting the channel. Here again, no await
                 }
@@ -274,6 +277,21 @@ Bon séjour parmi nous ! - Les Scorpions du Désert");
                 });
             }
             catch (e) {
+                bot.reply(msg, e);
+            }
+            break;
+        case 'ts':  // TeamSpeak connection
+            try {
+                const cur_member = await getMessageMember(msg);
+                if (cur_member) {
+                    const tsLink = await teamspeak.getConnectionLink(cur_member.roles.cache, cur_member.lsdName);
+                    newMessage = await msg.message.author.send("Lien vers TeamSpeak : " + tsLink);
+                    newMessage.delete({ timeout: 3600 * 1000 }); // Delete the message after one hour because the key will be expired by then. Note: we do NOT wait for completion here, to avoid waiting for one hour!
+                    if (context == 'ambient') {
+                        msg.message.delete({ timeout: 4000 });   // Remove the message to avoid poluting the channel. Here again, no await
+                    }    
+                }
+            } catch (e) {
                 bot.reply(msg, e);
             }
             break;
@@ -397,6 +415,9 @@ async function getMessageMember(msg) {
             const guild = await discordBot.config.client.guilds.cache.get(config.guild_id);
             member = await guild.members.fetch(msg.user);
         }
+        if (member) {
+            member.lsdName = member.nickname ? member.nickname : member.displayName;
+        }
     }
     catch (e) {
         console.error(e);
@@ -420,7 +441,7 @@ async function event_msg(bot, msg) {
         if (!arguments[1]) {
             // if no argument was given, give help to the user to explain how things work
             event_msg_help(bot, msg, "commande incomplète");
-       } else {
+        } else {
             switch (arguments[1].toLowerCase()) {
                 //if the first argument is 'create', it will create a new event, according to the other arguments given
                 case 'create':
@@ -532,8 +553,7 @@ Pour créer un event, indiquez sur la première ligne \'!event create\', suivit 
     }
 }
 
-function event_msg_help(bot, msg, explanation)
-{
+function event_msg_help(bot, msg, explanation) {
     bot.reply(msg, "Erreur : " + explanation + ". Quelques exemples de gestion d'events :\n\
     **Créer un event pour la section JDM ** : `!event create JDM 2021/03/24 20:45 Titre` (puis ajoutez dans les lignes suivantes de votre message les détails de l'event)\n\
     **Modifier la description de l'event #15 ** : `!event modify 15` (puis ajoutez dans les lignes suivantes de votre message les détails de l'event)\n\
@@ -543,7 +563,7 @@ function event_msg_help(bot, msg, explanation)
     **S'inscrire à l'event #15** : `!event signin 15`\n\
     **Se désinscrire de l'event #15** : `!event signout 15`\n\
     **Supprimer l'event #15 (vous devez être officier)** : `!event delete 15`\n\
-    Raccourcis : 'create'='c', 'list'='l' , 'listall'='la', 'info'='i', 'signin'='s'='+1', 'signout'='so'='-1', 'delete'='d'");    
+    Raccourcis : 'create'='c', 'list'='l' , 'listall'='la', 'info'='i', 'signin'='s'='+1', 'signout'='so'='-1', 'delete'='d'");
 }
 
 /**
@@ -565,31 +585,31 @@ async function kill_list_msg(bot, msg) {
                 const kanswer = await lsd_tools.kill_list_view(db, arguments[1]);   // display the kill list
                 bot.reply(msg, kanswer);
             } else {
-                switch (arguments[2].toLowerCase()) {    
-                case 'add':
-                case 'a':
-                    if (highest_rank === "Officier" || highest_rank === "Conseiller" || highest_rank === "Admin") {  // Only Officers can add/remove names
-                        if (!arguments[3] || msglines.length < 2 ) {
-                            bot.reply(msg, "Erreur : Nom ou description manquante.");
-                        } else {
-                            msglines.splice(0, 1);
-                            let description = msglines.join('\n');
-                            const aanswer = await lsd_tools.kill_list_add(db, arguments[1], arguments[3], description);   // add a name to the list
-                            bot.reply(msg, aanswer);
-                        }
-                    } else {  bot.reply(msg, "Erreur : Vous devez être Officier pour modifier la kill_list."); }
-                    break;
-                case 'remove':
-                case 'r':
-                    if (highest_rank === "Officier" || highest_rank === "Conseiller" || highest_rank === "Admin") {  // Only Officers can add/remove names
-                        const ranswer = await lsd_tools.kill_list_remove(db, arguments[1], arguments[3]);   // remove a name from the list
-                        bot.reply(msg, ranswer);
-                    } else {  bot.reply(msg, "Erreur : Vous devez être Officier modifier la kill_list."); }
-                    break;
+                switch (arguments[2].toLowerCase()) {
+                    case 'add':
+                    case 'a':
+                        if (highest_rank === "Officier" || highest_rank === "Conseiller" || highest_rank === "Admin") {  // Only Officers can add/remove names
+                            if (!arguments[3] || msglines.length < 2) {
+                                bot.reply(msg, "Erreur : Nom ou description manquante.");
+                            } else {
+                                msglines.splice(0, 1);
+                                let description = msglines.join('\n');
+                                const aanswer = await lsd_tools.kill_list_add(db, arguments[1], arguments[3], description);   // add a name to the list
+                                bot.reply(msg, aanswer);
+                            }
+                        } else { bot.reply(msg, "Erreur : Vous devez être Officier pour modifier la kill_list."); }
+                        break;
+                    case 'remove':
+                    case 'r':
+                        if (highest_rank === "Officier" || highest_rank === "Conseiller" || highest_rank === "Admin") {  // Only Officers can add/remove names
+                            const ranswer = await lsd_tools.kill_list_remove(db, arguments[1], arguments[3]);   // remove a name from the list
+                            bot.reply(msg, ranswer);
+                        } else { bot.reply(msg, "Erreur : Vous devez être Officier modifier la kill_list."); }
+                        break;
 
-                default:
-                    // first argument cannot be recognized
-                    kill_list_help(bot, msg, "option non reconnue");
+                    default:
+                        // first argument cannot be recognized
+                        kill_list_help(bot, msg, "option non reconnue");
                 }
             }
         }
