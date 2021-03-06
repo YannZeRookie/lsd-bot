@@ -77,7 +77,7 @@ async function getConnectionLink(roles, target) {
                 token = key.token;
                 console.log('TeamSpeak: Generated token ' + token + ' for ' + target);
                 if (token) {
-                    result = 'ts3server://' + ts_config.host + '?port=' + ts_config.serverport + '&token=' + token + '&password=iaMNY5JiDU23duku' + '&nickname=' + encodeURIComponent(target);
+                    result = 'ts3server://' + ts_config.host + '?port=' + ts_config.serverport + '&token=' + token + '&password=iaMNY5JiDU23duku' + '&nickname=' + encodeURIComponent(target) + '&addbookmark=LSD';
                 }
                 await teamspeak.logout();
                 console.log("TeamSpeak: LSD-Bot disconnected from TeamSpeak server");
