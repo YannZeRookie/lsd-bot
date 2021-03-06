@@ -108,11 +108,10 @@ ts_lib.TeamSpeak.connect(ts_config).then(async teamspeak => {
 async function getConnectionLink(roles, target) {
     try {
         if (!isConnected) {
-            await teamspeak.reconnect(2, 1000);
+            await teamspeak.reconnect(1, 1000);
         }
-
     } catch (error) {
-
+        console.error(error);
     }
     var token = '';
     try {
@@ -127,8 +126,9 @@ async function getConnectionLink(roles, target) {
 
         const key = await teamspeak.privilegeKeyAdd(0, sgid, undefined, 'Clé pour ' + target, '');
         token = key.token;
+        console.log('Generated token ' + token + ' for ' + target);
     } catch (error) {
-
+        console.error(error);
     }
     if (token) {
         return 'ts3server://' + ts_config.host + '?port=' + ts_config.serverport + '&token=' + token;
