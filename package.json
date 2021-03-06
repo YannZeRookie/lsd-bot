@@ -4,7 +4,7 @@
   "description": "Le Bot des Scorpions du Désert",
   "main": "index.js",
   "dependencies": {
-    "axios": "^0.19.0",
+    "axios": "^0.21.1",
     "botkit-discord": "YannZeRookie/botkit-discord#discord-api-v12",
     "discord.js": "^12.5",
     "mysql2": "^2.1.0",
