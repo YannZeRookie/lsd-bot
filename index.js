@@ -284,13 +284,22 @@ Bon séjour parmi nous ! - Les Scorpions du Désert");
             try {
                 const cur_member = await getMessageMember(msg);
                 if (cur_member) {
-                    const tsLink = await teamspeak.getConnectionLink(cur_member.roles.cache, cur_member.lsdName);
+                    const tsLink = await teamspeak.getConnectionLink(db, cur_member);
                     newMessage = await msg.message.author.send("Lien vers TeamSpeak : " + tsLink);
                     newMessage.delete({ timeout: 3600 * 1000 }); // Delete the message after one hour because the key will be expired by then. Note: we do NOT wait for completion here, to avoid waiting for one hour!
                     if (context == 'ambient') {
                         msg.message.delete({ timeout: 4000 });   // Remove the message to avoid poluting the channel. Here again, no await
                     }    
                 }
+            } catch (e) {
+                bot.reply(msg, e);
+            }
+            break;
+        case 'tsd': // TeamSpeak debug
+            try {
+                const cur_member = await getMessageMember(msg);
+                const res = await teamspeak.TSDebug(db, cur_member);
+                msg.message.author.send(res);
             } catch (e) {
                 bot.reply(msg, e);
             }
