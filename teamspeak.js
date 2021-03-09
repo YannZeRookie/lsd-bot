@@ -121,11 +121,13 @@ async function TSDebug(db, target) {
         await ts_lib.TeamSpeak.connect(ts_config).then(async teamspeak => {
             console.log("TeamSpeak: TSDebug: connected");
             try {
-                await teamspeak.customSearch('discord_id', target.id).then(res => {
-                    result += res.toString();
-                    console.log('TeamSpeak: TSDebug: ' + res);    
+                //const id = '407273313484931073';
+                const id = target.id;
+                await teamspeak.customSearch('discord_id', id).then(res => {
+                    result += res.value;
+                    console.log('TeamSpeak: TSDebug: ' + result);
                 }).catch(ee => {
-                    console.log("TeamSpeak: TSDebug: nothing found");
+                    console.log("TeamSpeak: TSDebug: nothing found: " + ee);
                     result += 'Nothing found';
                 });
                 //-- Done
