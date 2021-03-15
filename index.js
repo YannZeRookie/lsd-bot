@@ -42,7 +42,14 @@ if (!config.noCron) {
             lsd_tools.reviewInvites(db, discordConfig, guild);
         }
         catch (e) {
-            console.error('Error in cron: ' + e);
+            console.error('Error in reviewInvites cron: ' + e);
+        }
+    });
+    cron.schedule('0 */5 * * * *', async () => {    // Review TeamSpeak Server Groups Roles every 5 minutes
+        try {
+            await teamspeak.reviewRoles(db);
+        } catch (e) {
+            console.error('Error in reviewRoles cron: ' + e);
         }
     });
 }
@@ -284,12 +291,18 @@ Bon séjour parmi nous ! - Les Scorpions du Désert");
             try {
                 const cur_member = await getMessageMember(msg);
                 if (cur_member) {
-                    const tsLink = await teamspeak.getConnectionLink(db, cur_member);
-                    newMessage = await msg.message.author.send("Lien vers TeamSpeak : " + tsLink);
-                    newMessage.delete({ timeout: 3600 * 1000 }); // Delete the message after one hour because the key will be expired by then. Note: we do NOT wait for completion here, to avoid waiting for one hour!
+                    var is_invite = cur_member.roles.cache.some(role => { return role.name == 'Invité'; });
+                    var is_scorpion = cur_member.roles.cache.some(role => { return role.name == 'Scorpion'; });
+                    if (is_invite || is_scorpion) {
+                        const tsLink = await teamspeak.getConnectionLink(db, cur_member);
+                        newMessage = await msg.message.author.send("Lien vers TeamSpeak : " + tsLink);
+                        newMessage.delete({ timeout: 3600 * 1000 }); // Delete the message after one hour because the key will be expired by then. Note: we do NOT wait for completion here, to avoid waiting for one hour!
+                    } else {
+                        await msg.message.author.send("Désolé, il faut être au moins de niveau Invité pour rejoindre notre serveur TeamSpeak.");
+                    }
                     if (context == 'ambient') {
                         msg.message.delete({ timeout: 4000 });   // Remove the message to avoid poluting the channel. Here again, no await
-                    }    
+                    }
                 }
             } catch (e) {
                 bot.reply(msg, e);
@@ -297,9 +310,10 @@ Bon séjour parmi nous ! - Les Scorpions du Désert");
             break;
         case 'tsd': // TeamSpeak debug
             try {
-                const cur_member = await getMessageMember(msg);
-                const res = await teamspeak.TSDebug(db, cur_member);
-                msg.message.author.send(res);
+                //const cur_member = await getMessageMember(msg);
+                //const res = await teamspeak.TSDebug(db, cur_member);
+                await teamspeak.reviewRoles(db);
+                msg.message.author.send('reviewRoles: done');
             } catch (e) {
                 bot.reply(msg, e);
             }
