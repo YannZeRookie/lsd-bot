@@ -57,10 +57,49 @@ ts_lib.TeamSpeak.connect(ts_config).then(async teamspeak => {
 })
 */
 
+/**
+ * Sleep for some time
+ * @param {integer} ms Time to wait in ms
+ * @returns 
+ */
 function sleep(ms) {
     return new Promise(res => setTimeout(res, ms));
 }
 
+/**
+ * Substract a array from the current one
+ * @param {Array} substract The array to remove
+ * @returns New array: this - substract
+ */
+Array.prototype.diff = function (substract) {
+    return this.filter(x => !substract.includes(x));
+}
+
+/**
+ * Remove duplicates in an Array
+ * @returns New array without duplicates
+ */
+Array.prototype.unique = function () {
+    return [...new Set(this)];
+}
+
+/**
+ * Insersect this array with another
+ * @param {Array} other 
+ * @returns New array
+ */
+Array.prototype.intersect = function (other) {
+    return this.filter(x => other.includes(x));
+}
+
+/**
+ * Union of this array with another. Duplicates are removed
+ * @param {Array} other 
+ * @returns New array
+ */
+Array.prototype.union = function (other) {
+    return [...this, ...other].unique();
+}
 
 /**
  * 
@@ -69,14 +108,14 @@ function sleep(ms) {
  * @returns String link
  */
 async function getConnectionLink(db, target) {
-    var result = '';
+    let result = '';
     try {
         await ts_lib.TeamSpeak.connect(ts_config).then(async teamspeak => {
             console.log("TeamSpeak: LSD-Bot connected to TeamSpeak server");
             const roles = target.roles.cache;
             try {
                 // TODO: if would be safer to rely on the roles in the database rather than on the Discord roles
-                var sgid = '4363725';   // Visiteur server group id is the default one
+                let sgid = '4363725';   // Visiteur server group id is the default one
                 if (roles.some(role => role.name === 'Conseiller')) {
                     sgid = '4365577';
                 } else if (roles.some(role => role.name === 'Officier')) {
@@ -89,7 +128,7 @@ async function getConnectionLink(db, target) {
                 //-- Create token key
                 // Store Discord id (and user id if any) in the key "custom set". This will allow to relate the use to Discord and the LSD database
                 // Custom set have this format: ident=ident1 value=value1|ident=ident2 value=value2|ident=ident3 value=value3
-                var customSet = 'ident=discord_id value=' + target.id;
+                let customSet = 'ident=discord_id value=' + target.id;
                 const db_user = await db.query("SELECT id FROM lsd_users WHERE discord_id=? ", [target.id]);
                 if (db_user[0].length) {
                     customSet += '|ident=user_id value=' + db_user[0][0].id;
@@ -149,8 +188,8 @@ async function reviewRoles(db) {
                         1: {cldbid: '51875828', ident: 'user_id', value: '14'}
                         length: 2
                         */
-                        var discord_id = "";
-                        var user_id = "";
+                        let discord_id = "";
+                        let user_id = "";
                         infos.forEach(info => {
                             if (info.ident == "discord_id") {
                                 discord_id = info.value;
@@ -202,58 +241,35 @@ async function verifyServerGroups(db, client, discord_id, user_id) {
         }
     }
 
-    var bestLSDRole = '';
+    const allowed_roles = ['conseiller', 'officier', 'scorpion', 'invite', 'visiteur'];
+    let lsd_roles = [];
     if (user_id) {
         const db_user_res = await db.query("SELECT * FROM lsd_roles WHERE user_id=? ", [user_id]);
-        bestLSDRole = findBestLSDRole(db_user_res[0]);
+        lsd_roles = db_user_res[0].map(r => r.role).unique().intersect(allowed_roles);  // To get a list with unique and allowed roles
     } else if (discord_id) {
         //-- So maybe the user is an Invité? Look in the lsd_invitations table
         const db_invitation_res = await db.query("SELECT * FROM lsd_invitations WHERE discord_id=? ", [discord_id]);
-        bestLSDRole = (db_invitation_res[0].length) ? 'invite' : 'visiteur';
+        lsd_roles = (db_invitation_res[0].length) ? ['invite'] : ['visiteur'];
+    } else {
+        lsd_roles = ['visiteur'];
     }
+    const new_serveur_groups = lsd_roles.map(r => LSDRoleToTSGroup(r));
 
-    if (bestLSDRole && bestLSDRole != 'admin') {    // Too dangerous to manage admin automatically
-        const sgid = LSDRoleToTSGroup(bestLSDRole);
-        if (sgid && !client.servergroups.some(el => el == sgid)) {
-            try {
-                console.log("TeamSpeak: verifyServerGroups: updating Server Groups for " + client.nickname);
-                await client.delGroups(client.servergroups);
-                await client.addGroups(sgid);
-            } catch (error) {
-                console.error("TeamSpeak: error: verifyServerGroups: " + error);
-            }
+    const to_remove = client.servergroups.diff(new_serveur_groups); // Groups to remove : client.servergroups - new_serveur_groups
+    const to_add = new_serveur_groups.diff(client.servergroups);     // Groups to add : new_serveur_groups - client.servergroups
+    if (to_remove.length + to_add.length > 0) {
+        console.log("TeamSpeak: verifyServerGroups: updating Server Groups for " + client.nickname);
+    }
+    try {
+        if (to_remove.length) {
+            await client.delGroups(to_remove);
         }
+        if (to_add.length) {
+            await client.addGroups(to_add);
+        }
+    } catch (error) {
+        console.error("TeamSpeak: error: verifyServerGroups: remove or add: " + error);
     }
-}
-
-/**
- * Find the most appropriate role
- * @param {*} lsd_roles 
- * @returns The most appropriate role
- */
-function findBestLSDRole(lsd_roles) {
-    //-- Admin ?
-    if (lsd_roles.some(role => role.role == 'admin')) {
-        return 'admin';
-    }
-    //-- Conseiller ?
-    if (lsd_roles.some(role => role.role == 'conseiller')) {
-        return 'conseiller';
-    }
-    //-- Officier ?
-    if (lsd_roles.some(role => role.role == 'officier')) {
-        return 'officier';
-    }
-    //-- Scorpion ?
-    if (lsd_roles.some(role => role.role == 'scorpion')) {
-        return 'scorpion';
-    }
-    //-- Invité ?
-    if (lsd_roles.some(role => role.role == 'invite')) {
-        return 'invite';
-    }
-    //-- Nothing interesting found
-    return '';
 }
 
 /**
@@ -279,7 +295,7 @@ function LSDRoleToTSGroup(lsd_role) {
  * @returns String message
  */
 async function TSDebug(db, target) {
-    var result = 'TSDebug: ';
+    let result = 'TSDebug: ';
     try {
         await ts_lib.TeamSpeak.connect(ts_config).then(async teamspeak => {
             console.log("TeamSpeak: TSDebug: connected");
@@ -302,10 +318,9 @@ async function TSDebug(db, target) {
                     const client = clients[index];
                     try {
 
-                        // DO IT
+                        reviewRoles(db);
 
-
-                        await sleep(1000);  // Let the server rest for a while to avoid flooding
+                        //await sleep(1000);  // Let the server rest for a while to avoid flooding
                     } catch (error) {
                     }
                 }
