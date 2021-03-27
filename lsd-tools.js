@@ -424,18 +424,48 @@ async function event_delete(db, id, highest_rank, author_tag) {
  * Looks for events in the database, abd returns a summary.
  * @param {*} db Database
  * @param {*} option string that should be either 'all', or 'future', indicating if all events or only future events should be returned.
+ * @param {*} author_tag tag of the message author
  */
-async function event_list(db, option) {
+async function event_list(db, option, author_tag) {
     try {
         const filter = (option === 'all') ? "1" : "date_time > NOW()";
         const events_data = await db.query("SELECT * FROM lsd_events WHERE " + filter + " ORDER BY date_time");
-        var resultstring = 'Voici la liste de tous les events :\n';
+        let inscrits
+        let count
         const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', hour: 'numeric', minute: 'numeric' };
-        events_data[0].forEach(function (elem) {
-            var edate = elem.date_time.toLocaleDateString('fr-FR', options);
-            resultstring += "**Event #" + elem.event_id + " :** __"+ elem.title +"__, section " + elem.section_tag + ", " + edate + ", créé par " + elem.author_discord_tag + "\n";
-        });
-        return resultstring;
+        if (option === "15-days") {
+            var resultstring = 'Voici le planning des 15 prochains jours:\n';
+            for (var i = 0; i < 15; i+=1) {
+                var calendardate = new Date(Date.now() + i * 24 * 60 * 60 * 1000);
+                var days = ['Dim.','Lun.','Mar.','Mer.','Jeu.','Ven.','Sam.'];
+                var months = ['Jan.','Fev.','Mars','Avr.','Mai','Juin','Jui.','Août','Sep.','Oct.','Nov.','Dec.'];
+                resultstring += "\n**" + days[calendardate.getDay()] + " " + calendardate.getDate().toString() + " " + months[calendardate.getMonth()] + "** \n" ;
+                events_data[0].forEach(function (elem) {
+                    var edate = elem.date_time;
+                    inscrits = elem.participants ?? "";
+                    count = (inscrits.match(/¸/g) || []).length;
+                    if (edate.getDate() === calendardate.getDate() && edate.getMonth() === calendardate.getMonth() && edate.getYear() === calendardate.getYear() ) {
+                        resultstring += (edate.getHours()<10?'0':'') + edate.getHours() + ':' + (edate.getMinutes()<10?'0':'') + edate.getMinutes() + ' | ' + elem.section_tag+" #" + elem.event_id + " : "+ elem.title+ "  ("+count+" inscrits)";
+                        //if the author is signed in this event, we add a logo to indicate it
+                        if (inscrits.includes(author_tag) && author_tag !== '') { resultstring += " :white_check_mark: " +"\n" }
+                        else { resultstring += " \n";}
+                    }
+                });
+                }
+        }
+        else {
+            var resultstring = 'Voici la liste des events :\n';
+            events_data[0].forEach(function (elem) {
+                var edate = elem.date_time.toLocaleDateString('fr-FR', options);
+                inscrits = elem.participants ?? "";
+                resultstring += "Event #" + elem.event_id + " : **"+ elem.title +"**, section " + elem.section_tag + ",   _" + edate + "_    créé par " + elem.author_discord_tag;
+                //if the author is signed in this event, we add a logo to indicate it
+                if (inscrits.includes(author_tag) && author_tag !== '') { resultstring += " :white_check_mark: " +"\n" }
+                else { resultstring += "\n";}
+            });
+        }
+        //replacing \: by : , allows to use discord icons if the user escaped the : characters in his titles
+        return resultstring.replace(/\\:/g, ':');
     }
     catch (e) {
         console.error(e);

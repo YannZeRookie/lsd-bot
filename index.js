@@ -88,8 +88,8 @@ discordBot.hears('.*', 'direct_message', async (bot, msg) => {
  */
 discordBot.hears('.*', 'direct_mention', async (bot, msg) => {
     if (msg.message.author.id == discordConfig.client.user.id) return; // Don't answer to ourselves
-    //bot.reply(msg.message, 'Received a direct_mention from ' + msg.message.author.username);
-    await bot.reply(msg, "Salut " + msg.message.author.username + ", si tu as besoin d'aide, tape `" + config.prefix + "aide`");
+    //bot_reply(bot, msg.message, 'Received a direct_mention from ' + msg.message.author.username);
+    await bot_reply(bot, msg, "Salut " + msg.message.author.username + ", si tu as besoin d'aide, tape `" + config.prefix + "aide`");
 });
 
 /**
@@ -97,7 +97,7 @@ discordBot.hears('.*', 'direct_mention', async (bot, msg) => {
  */
 discordBot.hears('.*', 'mention', async (bot, msg) => {
     if (msg.message.author.id == discordConfig.client.user.id) return; // Don't answer to ourselves
-    await bot.reply(msg, msg.message.author.username + " parle de moi, c'est sympa ! Pour avoir de l'aide, tape `" + config.prefix + "aide`");
+    await bot_reply(bot, msg, msg.message.author.username + " parle de moi, c'est sympa ! Pour avoir de l'aide, tape `" + config.prefix + "aide`");
 });
 
 discordBot.on('shardDisconnect', (bot, event) => {
@@ -157,7 +157,7 @@ async function processCommand(command, context, bot, msg) {
                 }
             }
             catch (e) {
-                bot.reply(msg, e);
+                bot_reply(bot, msg, e);
             }
             break;
         case 'restart':
@@ -170,17 +170,17 @@ async function processCommand(command, context, bot, msg) {
                 }
             }
             catch (e) {
-                bot.reply(msg, e);
+                bot_reply(bot, msg, e);
             }
             break;
         case 'event':
         case 'events':
         case 'e':
             try {
-                event_msg(bot, msg);
+                event_msg(bot, msg, context);
             }
             catch (e) {
-                bot.reply(msg, e);
+                bot_reply(bot, msg, e);
             }
             break;
         case 'inscription':
@@ -196,11 +196,11 @@ async function processCommand(command, context, bot, msg) {
                 }
             }
             catch (e) {
-                bot.reply(msg, e);
+                bot_reply(bot, msg, e);
             }
             break;
         case 'hello':
-            bot.reply(msg, 'Salut à toi ' + msg.message.author.username + ' ! Pour avoir de l\'aide, tape `' + config.prefix + 'aide`');
+            bot_reply(bot, msg, 'Salut à toi ' + msg.message.author.username + ' ! Pour avoir de l\'aide, tape `' + config.prefix + 'aide`');
             break;
         case 'kill_list':
         case 'k':
@@ -208,7 +208,7 @@ async function processCommand(command, context, bot, msg) {
                 kill_list_msg(bot, msg);
             }
             catch (e) {
-                bot.reply(msg, e);
+                bot_reply(bot, msg, e);
             }
             break;
         case 'lance':
@@ -238,7 +238,7 @@ async function processCommand(command, context, bot, msg) {
                 msg.mentions.members.forEach(async target_member => {
                     try {
                         const exp = await lsd_tools.invite(db, msg.guild, target_member, cur_member, expiration);
-                        bot.reply(msg, "Invitation réussie de " + (target_member.nickname ? target_member.nickname : target_member.displayName) + ` pour ${exp} jours`);
+                        bot_reply(bot, msg, "Invitation réussie de " + (target_member.nickname ? target_member.nickname : target_member.displayName) + ` pour ${exp} jours`);
                         // Send a private message to the invited user, with explanations
                         target_member.send("Félicitations, tu as désormais le statut d'Invité sur le serveur des Scorpions du Désert ! \
 Ceci te permet de circuler et de communiquer sur tous les canaux ouverts aux invités de notre serveur Discord.\n\
@@ -247,12 +247,12 @@ il faudra qu'un Scorpion t'invite de nouveau.\n\
 Nous espérons que ton passage chez nous te plaîra et, qui saît ?, te décidera à nous rejoindre.\n\
 Bon séjour parmi nous ! - Les Scorpions du Désert");
                     } catch (e) {
-                        bot.reply(msg, e);
+                        bot_reply(bot, msg, e);
                     }
                 });
             }
             catch (e) {
-                bot.reply(msg, e);
+                bot_reply(bot, msg, e);
             }
             break;
         case 'uninvite':
@@ -279,12 +279,12 @@ Bon séjour parmi nous ! - Les Scorpions du Désert");
                         }, true);
                     }
                     catch (e) {
-                        bot.reply(msg, e);
+                        bot_reply(bot, msg, e);
                     }
                 });
             }
             catch (e) {
-                bot.reply(msg, e);
+                bot_reply(bot, msg, e);
             }
             break;
         case 'ts':  // TeamSpeak connection
@@ -305,7 +305,7 @@ Bon séjour parmi nous ! - Les Scorpions du Désert");
                     }
                 }
             } catch (e) {
-                bot.reply(msg, e);
+                bot_reply(bot, msg, e);
             }
             break;
         case 'tsd': // TeamSpeak debug
@@ -315,7 +315,7 @@ Bon séjour parmi nous ! - Les Scorpions du Désert");
                 await teamspeak.reviewRoles(db);
                 msg.message.author.send('reviewRoles: done');
             } catch (e) {
-                bot.reply(msg, e);
+                bot_reply(bot, msg, e);
             }
             break;
         case 'review':
@@ -325,7 +325,7 @@ Bon séjour parmi nous ! - Les Scorpions du Désert");
                 await lsd_tools.reviewInvites(db, discordConfig, msg.guild);
             }
             catch (e) {
-                bot.reply(msg, e);
+                bot_reply(bot, msg, e);
             }
             break;
         case 'test':
@@ -337,7 +337,7 @@ Bon séjour parmi nous ! - Les Scorpions du Désert");
                 const members = role.members;
             }
             catch (e) {
-                bot.reply(msg, e);
+                bot_reply(bot, msg, e);
             }
             break;
         case 'aide':
@@ -345,17 +345,17 @@ Bon séjour parmi nous ! - Les Scorpions du Désert");
         case 'sos':
         case 'a':
         case 'h':
-            bot.reply(msg, helpMessage());
+            bot_reply(bot, msg, helpMessage());
             break;
         case 'raccourcis':
         case 'shortcuts':
         case 'short':
         case 'synomynmes':
         case 'r':
-            bot.reply(msg, sortcutsMessage());
+            bot_reply(bot, msg, sortcutsMessage());
             break;
         default:
-            bot.reply(msg, "Commande inconnue, tape `" + config.prefix + "aide` pour la liste des commandes disponibles");
+            bot_reply(bot, msg, "Commande inconnue, tape `" + config.prefix + "aide` pour la liste des commandes disponibles");
 
     }
 }
@@ -412,13 +412,13 @@ function lance(bot, msg) {
     if (r && r[1] && r[1] > 1) {
         if (r[1] <= 100000000) {
             var result = 1 + Math.floor(Math.random() * Math.floor(r[1]));
-            bot.reply(msg.message, 'OK, je lance un dé à ' + r[1] + ' faces ! Résultat : ' + result);
+            bot_reply(bot, msg.message, 'OK, je lance un dé à ' + r[1] + ' faces ! Résultat : ' + result);
         }
         else {
-            bot.reply(msg.message, "Désolé, je suis limité à 100000000");
+            bot_reply(bot, msg.message, "Désolé, je suis limité à 100000000");
         }
     } else {
-        bot.reply(msg.message, "Désolé, je n'ai pas compris. Il me faut un nombre ≥ 2 après la commande");
+        bot_reply(bot, msg.message, "Désolé, je n'ai pas compris. Il me faut un nombre ≥ 2 après la commande");
     }
 }
 
@@ -454,8 +454,9 @@ async function getMessageMember(msg) {
  * Event manager through the bot and a mysql table
  * @param {*} bot 
  * @param {*} msg 
+ * @param {*} context
  */
-async function event_msg(bot, msg) {
+async function event_msg(bot, msg, context) {
     const msglines = msg.message.content.split('\n');
     const arguments = msglines[0].trim().split(/ +/g);
     const member = await getMessageMember(msg);
@@ -470,14 +471,14 @@ async function event_msg(bot, msg) {
                 case 'create':
                 case 'c':
                     if (!arguments[2] || !arguments[3] || !arguments[4] || !arguments[5] || msglines.length < 2) {
-                        bot.reply(msg, 'Erreur : paramètres invalides ou description de l\'event manquante.\n\
+                        bot_reply(bot, msg, 'Erreur : paramètres invalides ou description de l\'event manquante.\n\
 Pour créer un event, indiquez sur la première ligne \'!event create\', suivit d\'une section(JDM, DU, etc...), d\'une date (AAAA/MM/JJ), d\'une heure (HH:MM)\
 , d\'un titre, et finalement ajoutez le reste des informations concernant l\'event dans les lignes suivantes');
                     }
                     else {
                         let eventdate = new Date(arguments[3] + ' ' + arguments[4]);
                         if (eventdate.toDateString() === "Invalid Date") {
-                            bot.reply('Erreur : date/heure incompréhensible : ' + arguments[3] + ' ' + arguments[3] + '. Le format attendu est : AAAA/MM/JJ HH:MM');
+                            bot_reply('Erreur : date/heure incompréhensible : ' + arguments[3] + ' ' + arguments[3] + '. Le format attendu est : AAAA/MM/JJ HH:MM');
                         }
                         else {
                             msglines.splice(0, 1);
@@ -485,28 +486,28 @@ Pour créer un event, indiquez sur la première ligne \'!event create\', suivit 
                             let title = arguments.slice(5).join(' ');
                             //event create function arguments: (database, section, datetime, author.discord_id, author.discord_tag, description-de-levent, title)
                             const dbanswer = await lsd_tools.event_create(db, arguments[2], eventdate, msg.message.author.id, msg.message.author.tag, description, title);
-                            bot.reply(msg, dbanswer);
+                            bot_reply(bot, msg, dbanswer);
                         }
                     }
                     break;
                 //if the first argument is 'delete', it will delete an existing event that must be given in the second argument
                 case 'delete':
                 case 'd':
-                    if (!arguments[2]) { bot.reply(msg, 'Erreur : Veuillez indiquer un numéro d\'identifiant d\'event.'); }
+                    if (!arguments[2]) { bot_reply(bot, msg, 'Erreur : Veuillez indiquer un numéro d\'identifiant d\'event.'); }
                     else {
                         const danswer = await lsd_tools.event_delete(db, arguments[2], highest_rank, msg.message.author.tag);   // deletion of the event
-                        bot.reply(msg, danswer);
+                        bot_reply(bot, msg, danswer);
                     }
                     break;
                 //if the first argument is 'info', it will display information about the event given in second argument
                 case 'info':
                 case 'i':
                     if (!arguments[2]) {
-                        bot.reply(msg, 'Erreur : veuillez indiquer un numéro d\'identifiant d\'event.');
+                        bot_reply(bot, msg, 'Erreur : veuillez indiquer un numéro d\'identifiant d\'event.');
                     }
                     else {
                         const ianswer = await lsd_tools.event_info(db, arguments[2]);
-                        bot.reply(msg, ianswer);
+                        bot_reply(bot, msg, ianswer);
                     }
                     break;
                 // if the first argument is 'modify', il will check for an event id, and modify the description of the 
@@ -514,25 +515,23 @@ Pour créer un event, indiquez sur la première ligne \'!event create\', suivit 
                 case 'modifier':
                 case 'modif':
                 case 'm':
-                    if (!arguments[2]) { bot.reply(msg, 'Erreur : veuillez indiquer un numéro d\'identifiant d\'event.'); }
+                    if (!arguments[2]) { bot_reply(bot, msg, 'Erreur : veuillez indiquer un numéro d\'identifiant d\'event.'); }
                     else {
                         msglines.splice(0, 1);
                         let description = msglines.join('\n');
                         //event modify : changer la description d'un event
                         const ianswer = await lsd_tools.event_modify(db, arguments[2], msg.message.author.tag, description);
-                        bot.reply(msg, ianswer);
+                        bot_reply(bot, msg, ianswer);
                     }
                     break;
                 //if the first argument is 'signup', it will add a Discord member to the participants list. The event must be given in second argument
                 case 'signin':
                 case 's':
                 case '+1':
-                    if (!arguments[2]) {
-                        bot.reply(msg, 'Erreur : veuillez indiquer un numéro d\'identifiant d\'event pour vous y inscrire.');
-                    }
+                    if (!arguments[2]) { bot_reply(bot, msg, 'Erreur : veuillez indiquer un numéro d\'identifiant d\'event pour vous y inscrire.'); }
                     else {
                         const sanswer = await lsd_tools.event_sign_in(db, arguments[2], msg.message.author.tag);
-                        bot.reply(msg, sanswer);
+                        bot_reply(bot, msg, sanswer);
                     }
                     break;
 
@@ -540,29 +539,39 @@ Pour créer un event, indiquez sur la première ligne \'!event create\', suivit 
                 case 'signout':
                 case 'so':
                 case '-1':
-                    if (!arguments[2]) {
-                        bot.reply(msg, 'Erreur : veuillez indiquer un numéro d\'identifiant d\'event pour vous y désinscrire.');
-                    }
+                    if (!arguments[2]) { bot_reply(bot, msg, 'Erreur : veuillez indiquer un numéro d\'identifiant d\'event pour vous y désinscrire.');  }
                     else {
                         const sanswer = await lsd_tools.event_sign_out(db, arguments[2], msg.message.author.tag);
-                        bot.reply(msg, sanswer);
+                        bot_reply(bot, msg, sanswer);
                     }
+                    break;
+
+                //if the first argument is 'list', it will display a list a future events
+                case 'list':
+                case 'l':
+                    if (context === 'direct_message') { authorID = msg.message.author.tag }
+                    else {authorID = '' }
+                    const lanswer = await lsd_tools.event_list(db, 'future-only', authorID);
+                    bot_reply(bot, msg, lanswer);
                     break;
 
                 //if the first argument is 'listall', it will display a list a future and past events
                 case 'listall':
                 case 'la':
                 case 'all':
-                    //  TBD : do something here
-                    const laanswer = await lsd_tools.event_list(db, 'all');
-                    bot.reply(msg, laanswer);
+                    if (context === 'direct_message') { authorID = msg.message.author.tag }
+                    else {authorID = '' }
+                    const laanswer = await lsd_tools.event_list(db, 'all', authorID);
+                    bot_reply(bot, msg, laanswer);
                     break;
 
                 //if the first argument is 'list', it will display a list a future events
-                case 'list':
-                case 'l':
-                    const lanswer = await lsd_tools.event_list(db, 'future-only');
-                    bot.reply(msg, lanswer);
+                case 'list15days':
+                case 'l15':
+                    if (context === 'direct_message') { authorID = msg.message.author.tag }
+                    else {authorID = '' }
+                    const lcanswer = await lsd_tools.event_list(db, '15-days', authorID);
+                    bot_reply(bot, msg, lcanswer);
                     break;
 
                 default:
@@ -572,12 +581,12 @@ Pour créer un event, indiquez sur la première ligne \'!event create\', suivit 
         }
     }
     else {
-        bot.reply(msg, "Erreur : Vous devez être Scorpion pour utiliser cette commande.");
+        bot_reply(bot, msg, "Erreur : Vous devez être Scorpion pour utiliser cette commande.");
     }
 }
 
 function event_msg_help(bot, msg, explanation) {
-    bot.reply(msg, "Erreur : " + explanation + ". Quelques exemples de gestion d'events :\n\
+    bot_reply(bot, msg, "Erreur : " + explanation + ". Quelques exemples de gestion d'events :\n\
     **Créer un event pour la section JDM ** : `!event create JDM 2021/03/24 20:45 Titre` (puis ajoutez dans les lignes suivantes de votre message les détails de l'event)\n\
     **Modifier la description de l'event #15 ** : `!event modify 15` (puis ajoutez dans les lignes suivantes de votre message les détails de l'event)\n\
     **Voir une liste des events à venir** : `!event list`\n\
@@ -606,28 +615,28 @@ async function kill_list_msg(bot, msg) {
         } else {
             if (!arguments[2]) {
                 const kanswer = await lsd_tools.kill_list_view(db, arguments[1]);   // display the kill list
-                bot.reply(msg, kanswer);
+                bot_reply(bot, msg, kanswer);
             } else {
                 switch (arguments[2].toLowerCase()) {
                     case 'add':
                     case 'a':
                         if (highest_rank === "Officier" || highest_rank === "Conseiller" || highest_rank === "Admin") {  // Only Officers can add/remove names
                             if (!arguments[3] || msglines.length < 2) {
-                                bot.reply(msg, "Erreur : Nom ou description manquante.");
+                                bot_reply(bot, msg, "Erreur : Nom ou description manquante.");
                             } else {
                                 msglines.splice(0, 1);
                                 let description = msglines.join('\n');
                                 const aanswer = await lsd_tools.kill_list_add(db, arguments[1], arguments[3], description);   // add a name to the list
-                                bot.reply(msg, aanswer);
+                                bot_reply(bot, msg, aanswer);
                             }
-                        } else { bot.reply(msg, "Erreur : Vous devez être Officier pour modifier la kill_list."); }
+                        } else { bot_reply(bot, msg, "Erreur : Vous devez être Officier pour modifier la kill_list."); }
                         break;
                     case 'remove':
                     case 'r':
                         if (highest_rank === "Officier" || highest_rank === "Conseiller" || highest_rank === "Admin") {  // Only Officers can add/remove names
                             const ranswer = await lsd_tools.kill_list_remove(db, arguments[1], arguments[3]);   // remove a name from the list
-                            bot.reply(msg, ranswer);
-                        } else { bot.reply(msg, "Erreur : Vous devez être Officier modifier la kill_list."); }
+                            bot_reply(bot, msg, ranswer);
+                        } else { bot_reply(bot, msg, "Erreur : Vous devez être Officier modifier la kill_list."); }
                         break;
 
                     default:
@@ -638,14 +647,42 @@ async function kill_list_msg(bot, msg) {
         }
     }
     else {
-        bot.reply(msg, "Erreur : Vous devez être Scorpion pour utiliser cette commande.");
+        bot_reply(bot, msg, "Erreur : Vous devez être Scorpion pour utiliser cette commande.");
     }
 }
 
 function kill_list_help(bot, msg, explanation) {
-    bot.reply(msg, "Erreur : " + explanation + ". Quelques exemples :\n\
+    bot_reply(bot, msg, "Erreur : " + explanation + ". Quelques exemples :\n\
     **Visualiser la kill list de la section SC** : `!kill_list SC`\n\
     **(officiers) ajouter le joueur psykokilla à la kill list de la section DU** : `!kill_list DU add psykokilla` (puis ajoutez dans les lignes suivantes de votre message une description de la personne, son orga, pourquoi elle se retrouve dans cette liste, etc...)\n\
     **(officiers) retirer le joueur psykokilla de la kill list de la section DU** : `!kill_list DU remove psykokilla`\n\
     Raccourcis : 'kill_list'='k', 'add'='a' , 'remove'='r'" );
 }
+
+
+
+/**
+ * makes sure the string given for a bot reply is not to long for discord (2000 characters limatation).
+ * if it is, the string is splitted and sent into multiple replies. Splitting occurs only at newlines.
+ * @param {*} bot
+ * @param {*} msg 
+ * @param {*} reply_string 
+ */
+function bot_reply(bot, msg, reply_string ) {
+    var lines = reply_string.split(/\r?\n/);
+    var replies = [''];
+    var i = 0
+    lines.forEach(function (elem) {
+        if (elem.length + replies[i].length < 2000) { replies[i] += elem + '\n'; }
+        else {
+            replies.push('(...)\n');
+            i += 1;
+            replies[i] += elem + '\n';
+        }
+    });
+    //send the replies
+    replies.forEach(function (elem) {bot.reply(msg, elem);});
+ }
+ 
+
+ 
