@@ -296,7 +296,7 @@ async function event_info(db, id) {
         let resultstring = "**Event #" + id + " : ** __"+ title +"__\nSection " + resu[0][0].section_tag + "\n:calendar_spiral: " + eventdate + "\nCréé par " + author_tag + "\n---------------------\n";
         resultstring += resu[0][0].description + "\n---------------------\n :scorpion: " + count + " inscrits : " + inscrits;
         resultstring += "\nRépondez \' !e s " + id + " \' pour vous inscrire.";
-        return resultstring;
+        return resultstring.replace(/\\:/g, ':');
     }
     catch (e) {
         console.error(e);
