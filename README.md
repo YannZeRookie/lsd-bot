@@ -48,7 +48,7 @@ Installation de nodejs sur `Ubuntu` :
     $ sudo bash nodesource_setup.sh
     $ sudo apt-get install -y nodejs gcc g++ make
     $ curl -sL https://dl.yarnpkg.com/debian/pubkey.gpg | gpg --dearmor | sudo tee /usr/share/keyrings/yarnkey.gpg >/dev/null
-    $ echo "deb [signed-by=/usr/share/keyrings/yarnkey.gpg] https://dl.yarnpkg.com/debian stable main" | sudo tee /etc/apt/sources.list.d/yarn.list
+    $ echo "deb https://dl.yarnpkg.com/debian stable main" | sudo tee /etc/apt/sources.list.d/yarn.list
     $ sudo apt-get update && sudo apt-get install -y yarn
 
 Clonage du dépôt :
@@ -61,6 +61,16 @@ Après avoir cloné la repo et être entré dans le directory `lsd-bot` :
     $ npm install
 
 pour installer les packages dont l'app a besoin.
+
+### Correction de l'installation de skills-validator-1.0.0.tgz :
+
+Supprimer temporairement la ligne 12 du fichier package.json avant l'éxecution de `nmp install`.
+
+Après cette première installation, remette la lign 12 comme suite :
+
+    "skills-validator": "./node_modules/botbuilder/skills-validator/skills-validator-1.0.0.tgz",
+
+Enfin relancer `npm install`.
 
 Renommer les fichiers `*.sample.config` en enlevant le `.sample` et y remplir les valeurs. Il faudra un Bot de test dans le serveur Discord des LSD - c'est mieux que d'utiliser celui de production.
 
