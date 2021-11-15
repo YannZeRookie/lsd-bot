@@ -40,15 +40,26 @@ Pour désactiver la connexion à une base de données, laisser le champ `host` �
 Installation
 ------------
 
-Après avoir cloné la repo et être entré dans le directory `lsd-bot` :
+Après avoir cloné la repo et être entré dans le directory `lsd-bot`, l'installation des packages NPM se fait en deux temps,
+car il y a un souci avec le module `skills-validator`.
+
+1. Ouvrir le fichier `package.json` et enlever la ligne :
+
+```
+"skills-validator": "./node_modules/botbuilder/skills-validator/skills-validator-1.0.0.tgz",
+```
+
+puis installer les packages :
 
     $ npm install
 
-pour installer les packages dont l'app a besoin.
+2. Le package `skills-validator` sera récupéré par `botbilder`. Il suffit de remettre la ligne dans `package.json` et de relancer une deuxième fois `npm install` et voilà !
+
+2021-11-15 YC : j'ai le projet de virer `botkit-discord` et tout ce qui en dépend, cela permettra de repartir d'une base beaucoupl plus légère et d'éviter des migraines de dépendances à la `skills-validator`...
 
 Renommer les fichiers `*.sample.config` en enlevant le `.sample` et y remplir les valeurs. Il faudra un Bot de test dans le serveur Discord des LSD - c'est mieux que d'utiliser celui de production.
 
-Le fichier `config.json` contient votre url locale du site de gestion de compte. Par exemple http://localhost:8080/login
+Le fichier `config.json` contient votre url locale du site de gestion de compte. Par exemple http://localhost:8080/login Ce n'est utile que si vous faites aussi tourner le mini-site.
 
 Lancement
 ---------

@@ -1,20 +1,20 @@
 {
   "name": "lsd-bot",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Le Bot des Scorpions du Désert",
   "main": "index.js",
   "dependencies": {
-    "axios": "^0.19.0",
-    "botkit-discord": "YannZeRookie/botkit-discord#discord-api-v12",
-    "discord.js": "^12.5",
-    "mysql2": "^2.1.0",
-    "node-cron": "^2.0.3",
+    "axios": "^0.23.0",
+    "botkit-discord": "^0.1.5",
+    "discord.js": "^13.2.0",
+    "mysql2": "^2.3.2",
+    "node-cron": "^3.0.0",
     "skills-validator": "./node_modules/botbuilder/skills-validator/skills-validator-1.0.0.tgz",
     "ts3-nodejs-library": "^3.2.0",
-    "util": "^0.11.1"
+    "util": "^0.12.4"
   },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo Error: no test specified && exit 1"
   },
   "author": "YannZeRookie",
   "license": "MIT"
