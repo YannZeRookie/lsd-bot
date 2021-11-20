@@ -345,6 +345,20 @@ async function TSDebug(db, target) {
 
 //-- Snipets dumpfill -----------------------------------------------------------------------------------------
 
+
+/*
+ts_lib.TeamSpeak.connect(ts_config).then(async teamspeak => {
+    const clients = await teamspeak.clientList({ clientType: 0 })
+    clients.forEach(client => {
+      console.log("Sending 'Hello!' Message to", client.nickname)
+      client.message("Hello!")
+    })
+  }).catch(e => {
+    console.log("Catched an error!")
+    console.error(e)
+  })
+*/
+
 /* MAKE  A CUSTOM SEARCH
 //const ident = 'discord_id';
 //const id = '407273313484931073';

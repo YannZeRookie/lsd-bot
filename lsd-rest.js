@@ -41,7 +41,7 @@ async function getAllMembers(auth, guild, role_id) {
         };
     }
     catch (e) {
-        log.error(e);
+        console.error(e);
     }
     return result;
 }

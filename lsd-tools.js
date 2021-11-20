@@ -198,18 +198,17 @@ async function degrade_invite(db, guild, invitation, send_messages) {
     }
 }
 
-
 /**
  * Review the invites and turn some of them back to visiteurs
- * @param {*} db Database
- * @param {*} discordConfig Discord Bot token
- * @param {*} guild Guild (aka LSD Server)
+ * @param {object} db Database
+ * @param {string} token Discord Bot token
+ * @param {Guild} guild Guild (aka LSD Server)
  */
-async function reviewInvites(db, discordConfig, guild) {
+async function reviewInvites(db, token, guild) {
     try {
         if (guild) {
             //-- Shoot down the invites who do not have any invitations in the database
-            const invites = await lsd_rest.getAllMembers(discordConfig, guild, invite_role_id);
+            const invites = await lsd_rest.getAllMembers(token, guild, invite_role_id);
             for (const i of invites) {
                 const res = await db.query("SELECT id FROM lsd_invitations WHERE discord_id=?", [i.user.id]);
                 if (res[0].length == 0) {

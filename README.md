@@ -1,16 +1,23 @@
 LSD-Bot : le Bot des Scorpions du Désert
 ========================================
 
+Outils requis:
+--------------
+
+* Node.js version 16.6.0 ou supérieure
+* NPM version 13.3.1 ou supérieure
+
+
 Libraries
 ---------
 
 * Creating a Bot: https://discordpy.readthedocs.io/en/latest/discord.html
-* Discord JS lib: 
+* Discord JS lib (nous sommes en version 13 de la lib JS):
+  * Excellent Guide: https://discordjs.guide/
   * https://discord.js.org/
-  * Tutorial: https://gist.github.com/y21/a599ef74c8746341dbcbd32093a69eb8
   * Doc: https://discord.js.org/#/docs/main/stable/general/welcome
-  * Doc for v11: https://discord.js.org/#/docs/main/v11/general/welcome
-  * Great Q&A of basic actions: 
+Attention dans categorize.js, parfois il y a des null :
+  * Great Q&A of basic actions:
     * https://discordjs.guide/popular-topics/common-questions.html
     * https://github.com/AnIdiotsGuide/discordjs-bot-guide/blob/master/frequently-asked-questions.md
   * GitHub: https://github.com/discordjs/discord.js
@@ -21,12 +28,6 @@ Libraries
 * Looking at NPM packages: https://www.npmjs.com/
 * Axios package to perform HTTP queries easily: https://www.npmjs.com/package/axios
 
-* Discord Botkit adaptation: https://github.com/brh55/botkit-discord
-* Botkit:
-  * Website: https://botkit.ai/
-  * Doc: https://botkit.ai/getstarted.html
-  * NPM: https://www.npmjs.com/package/botkit
-  * GitHub: https://github.com/howdyai/botkit
 * Mysql JS lib: https://github.com/mysqljs/mysql
 
 Database
@@ -40,26 +41,13 @@ Pour désactiver la connexion à une base de données, laisser le champ `host` �
 Installation
 ------------
 
-Après avoir cloné la repo et être entré dans le directory `lsd-bot`, l'installation des packages NPM se fait en deux temps,
-car il y a un souci avec le module `skills-validator`.
-
-1. Ouvrir le fichier `package.json` et enlever la ligne :
-
-```
-"skills-validator": "./node_modules/botbuilder/skills-validator/skills-validator-1.0.0.tgz",
-```
-
-puis installer les packages :
+Après avoir cloné la repo et être entré dans le directory `lsd-bot`, l'installation des packages NPM se fait de façon standard :
 
     $ npm install
 
-2. Le package `skills-validator` sera récupéré par `botbilder`. Il suffit de remettre la ligne dans `package.json` et de relancer une deuxième fois `npm install` et voilà !
+Renommer les fichiers `*.sample.config` en enlevant le `.sample` et y remplir les valeurs. Il faudra vous créer un Bot de test dans le serveur Discord des LSD - c'est mieux que d'utiliser celui de production.
 
-2021-11-15 YC : j'ai le projet de virer `botkit-discord` et tout ce qui en dépend, cela permettra de repartir d'une base beaucoupl plus légère et d'éviter des migraines de dépendances à la `skills-validator`...
-
-Renommer les fichiers `*.sample.config` en enlevant le `.sample` et y remplir les valeurs. Il faudra un Bot de test dans le serveur Discord des LSD - c'est mieux que d'utiliser celui de production.
-
-Le fichier `config.json` contient votre url locale du site de gestion de compte. Par exemple http://localhost:8080/login Ce n'est utile que si vous faites aussi tourner le mini-site.
+Le fichier `config.json` contient votre url locale du site de gestion de compte. Par exemple http://localhost:8080/login Ce n'est utile que si vous faites aussi tourner le mini-site et que vous voukez utiliser le système de connexion.
 
 Lancement
 ---------
