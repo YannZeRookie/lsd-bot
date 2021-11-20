@@ -5,7 +5,7 @@ Outils requis:
 --------------
 
 * Node.js version 16.6.0 ou supérieure
-* NPM version 13.3.1 ou supérieure
+* NPM version 8 ou supérieure
 
 
 Libraries
