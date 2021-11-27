@@ -140,6 +140,11 @@ async function processCommand(command, bot, msg) {
                 setTimeout(() => { // Delete the message after one hour because the key will be expired by then
                     newMessage.delete();
                 }, 3600 * 1000);
+                if (msg.channel.type != 'DM') { // Deleting messages is not allowed in DM channels
+                    setTimeout(() => { // Remove the message to avoid poluting the channel
+                        msg.delete();
+                    }, 4000);
+                }
             }
             catch (e) {
                 bot_reply(bot, msg, e.message ?? e);
