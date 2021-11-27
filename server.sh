@@ -1,3 +1,3 @@
 #!/bin/bash
 cd "$(dirname "$0")"
-pm2 ecosystem.config.js
+pm2 start ecosystem.config.js
