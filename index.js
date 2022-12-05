@@ -207,6 +207,7 @@ async function processCommand(command, bot, msg) {
             }
             break;
         case 'lance':
+        case 'roll':
             lance(bot, msg);
             break;
         case 'inviter':
@@ -382,7 +383,7 @@ function helpMessage() {
 !aide               Obtenir cette aide\n\
 !event              Gestion des événements\n\
 !kill_list          Affichage des listes de joueurs ennemis ou griefers\n\
-!lance nombre       Lance un dé entre 1 et 'nombre'. Ex : dé à 6 faces : !lance 6\n\
+!lance n nombre     Lance 'n' dé(s) entre 1 et 'nombre'. Ex : dé à 6 faces : !lance 1 6 ou !lance 1d6\n\
 !raccourcis         Alternatives courtes des commandes\n\
         ```";
     return msg.replace(/!/g, config.prefix);
@@ -398,6 +399,7 @@ function sortcutsMessage() {
         "`!inviter    ` :  `!invite`, `!invit`, `!invitation`, `!i`\n" +
         "`!event      ` :  `!e`\n" +
         "`!kill_list  ` :  `!k`\n" +
+        "`!lance      ` :  `!roll`\n" +
         "`!aide       ` :  `!help`, `!sos`, `!h`, `!a`\n" +
         "`!raccourcis ` :  `!shortcuts`, `!short`, `!synomynmes`, `!r`\n" +
         ""
@@ -411,17 +413,29 @@ function sortcutsMessage() {
  * @param {Message} msg original message
  */
 function lance(bot, msg) {
-    var r = msg.content.match(/lance\s+(\d+)/);
-    if (r && r[1] && r[1] > 1) {
-        if (r[1] <= 100000000) {
-            var result = 1 + Math.floor(Math.random() * Math.floor(r[1]));
-            bot_reply(bot, msg, 'OK, je lance un dé à ' + r[1] + ' faces ! Résultat : ' + result);
+    function add(accumulator, a) {
+      return accumulator + a;
+    }
+    var r = msg.content.match(/lance\s+(\d*)[d ]*(\d*)/);
+    if (r && r[1] && r[1] >= 1 ) {
+        if (r[2] && r[2] > 1) {
+          if (r[1] <= 100) {
+              var result = []
+              for (let i = 0; i < r[1]; i++) {
+                result.push(1 + Math.floor(Math.random() * Math.floor(r[2])));
+              }
+              var total = result.reduce(add,0)
+              bot_reply(bot, msg, 'OK, je lance ' + r[1] + ' dé' + (r[1] > 1 ? 's' : '') + ' à ' + r[2] + ' faces ! Résultat : [' + result + '] (Total : ' + total + ')');
+          }
+          else {
+              bot_reply(bot, msg, "Désolé, je suis limité à 100 dés");
+          }
         }
         else {
-            bot_reply(bot, msg, "Désolé, je suis limité à 100000000");
+          bot_reply(bot, msg, "Désolé, je n'ai pas compris. Il me faut un nombre de face ≥ 2");
         }
     } else {
-        bot_reply(bot, msg, "Désolé, je n'ai pas compris. Il me faut un nombre ≥ 2 après la commande");
+        bot_reply(bot, msg, "Désolé, je n'ai pas compris. Il me faut un nombre de dé ≥ 1");
     }
 }
 
