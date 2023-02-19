@@ -49,13 +49,15 @@ if (!config.noCron) {
             console.error('Error in reviewInvites cron: ' + e);
         }
     });
-    cron.schedule('0 */5 * * * *', async () => {    // Review TeamSpeak Server Groups Roles every 5 minutes
-        try {
-            await teamspeak.reviewRoles(db);
-        } catch (e) {
-            console.error('Error in reviewRoles cron: ' + e);
-        }
-    });
+    
+    // cron.schedule('0 */5 * * * *', async () => {    // Review TeamSpeak Server Groups Roles every 5 minutes
+    //     try {
+    //         await teamspeak.reviewRoles(db);
+    //     } catch (e) {
+    //         console.error('Error in reviewRoles cron: ' + e);
+    //     }
+    // });
+    
 }
 
 /**
